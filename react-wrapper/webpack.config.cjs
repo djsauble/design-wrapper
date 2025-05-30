@@ -17,7 +17,7 @@ module.exports = {
   },
   devServer: {
     port: hostAppPort,
-    hot: true, // Enable HMR
+    //hot: true, // HMR is enabled by default
     headers: {
       'Access-Control-Allow-Origin': '*',
     },

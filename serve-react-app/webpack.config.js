@@ -26,7 +26,7 @@ module.exports = {
   },
   devServer: {
     port: servePort,
-    hot: true, // Enable HMR for the dev server itself
+    //hot: true, // HMR is enabled by default
     headers: {
       'Access-Control-Allow-Origin': '*',
     },
