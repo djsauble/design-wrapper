@@ -1,5 +1,6 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { ModuleFederationPlugin } = require('webpack').container;
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const path = require('path');
 const deps = require('./package.json').dependencies;
 require('dotenv').config({ path: './.env' });
@@ -13,9 +14,10 @@ if (!process.env.TARGET_APP_PATH || !process.env.TARGET_APP_ENTRY_POINT) {
 const targetAppPath = process.env.TARGET_APP_PATH;
 const targetAppEntryPoint = process.env.TARGET_APP_ENTRY_POINT;
 const servePort = process.env.SERVE_PORT || 3000; // Default port if not specified
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 module.exports = {
-  mode: 'development', // Or 'production' for production builds
+  mode: isDevelopment ? 'development' : 'production',
   entry: './src/index.js', // Create this dummy entry if it doesn't exist, Webpack needs an entry
   output: {
     publicPath: `http://localhost:${servePort}/`, // URL for the remote app
@@ -38,6 +40,9 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: ['@babel/preset-env', '@babel/preset-react'],
+            plugins: [
+              isDevelopment && require.resolve('react-refresh/babel')
+            ].filter(Boolean),
           },
         },
       },
@@ -77,6 +82,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './index.html', // Path to your host HTML file
     }),
+    isDevelopment && new ReactRefreshWebpackPlugin(),
   ],
   resolve: {
     extensions: ['.js', '.jsx'],
