@@ -1,13 +1,16 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { ModuleFederationPlugin } = require('webpack').container;
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const path = require('path');
 const deps = require('./package.json').dependencies;
+
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 const remoteAppPort = process.env.SERVE_REACT_APP_PORT || 3000; // Port of the remoteApp
 const hostAppPort = process.env.HOST_APP_PORT || 5173;   // Port for this host app
 
 module.exports = {
-  mode: 'development',
+  mode: isDevelopment ? 'development' : 'production',
   entry: './src/main.jsx', // Your existing entry point
   output: {
     publicPath: 'auto', // Or `http://localhost:${hostAppPort}/`
@@ -30,7 +33,9 @@ module.exports = {
           options: {
             presets: ['@babel/preset-env', ['@babel/preset-react', {runtime: 'automatic'}]],
              // Add react-refresh/babel for HMR of React components
-            plugins: [require.resolve('react-refresh/babel')].filter(Boolean),
+            plugins: [
+              isDevelopment && require.resolve('react-refresh/babel')
+            ].filter(Boolean),
           },
         },
       },
@@ -65,6 +70,8 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './index.html',
     }),
+    // Add the ReactRefreshWebpackPlugin only in development
+    isDevelopment && new ReactRefreshWebpackPlugin(),
   ].filter(Boolean),
   resolve: {
     extensions: ['.js', '.jsx'],
