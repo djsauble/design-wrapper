@@ -69,10 +69,12 @@ module.exports = {
         react: {
           singleton: true,
           requiredVersion: deps.react,
+          eager: true,
         },
         'react-dom': {
           singleton: true,
           requiredVersion: deps['react-dom'],
+          eager: true,
         },
       },
     }),
@@ -83,7 +85,7 @@ module.exports = {
       template: './index.html', // Path to your host HTML file
     }),
     isDevelopment && new ReactRefreshWebpackPlugin(),
-  ],
+  ].filter(Boolean),
   resolve: {
     extensions: ['.js', '.jsx'],
     // If your hello-world-app uses aliases, configure them here
