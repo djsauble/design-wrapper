@@ -26,7 +26,7 @@ module.exports = {
   },
   devServer: {
     port: servePort,
-    //hot: true, // HMR is enabled by default
+    hot: true, // HMR is enabled by default
     headers: {
       'Access-Control-Allow-Origin': '*',
     },
@@ -41,7 +41,7 @@ module.exports = {
           options: {
             presets: ['@babel/preset-env', '@babel/preset-react'],
             plugins: [
-              isDevelopment && require.resolve('react-refresh/babel')
+              //isDevelopment && require.resolve('react-refresh/babel')
             ].filter(Boolean),
           },
         },
@@ -84,7 +84,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './index.html', // Path to your host HTML file
     }),
-    isDevelopment && new ReactRefreshWebpackPlugin(),
+    //isDevelopment && new ReactRefreshWebpackPlugin(),
   ].filter(Boolean),
   resolve: {
     extensions: ['.js', '.jsx'],

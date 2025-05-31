@@ -1,5 +1,5 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { ModuleFederationPlugin } = require('webpack').container;
+const { ModuleFederationPlugin } = require('@module-federation/enhanced/webpack');
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const path = require('path');
 const deps = require('./package.json').dependencies;
@@ -17,7 +17,7 @@ module.exports = {
   },
   devServer: {
     port: hostAppPort,
-    //hot: true, // HMR is enabled by default
+    hot: true, // HMR is enabled by default
     headers: {
       'Access-Control-Allow-Origin': '*',
     },
@@ -33,7 +33,7 @@ module.exports = {
           options: {
             presets: ['@babel/preset-env', '@babel/preset-react'],
             plugins: [
-              isDevelopment && require.resolve('react-refresh/babel')
+              //isDevelopment && require.resolve('react-refresh/babel')
             ].filter(Boolean),
           },
         },
@@ -45,7 +45,7 @@ module.exports = {
     ],
   },
   plugins: [
-    process.env.NODE_ENV === 'development' && new (require('react-refresh-webpack-plugin'))(),
+    //process.env.NODE_ENV === 'development' && new (require('react-refresh-webpack-plugin'))(),
     new ModuleFederationPlugin({
       name: 'hostApp',
       remotes: {
@@ -70,7 +70,7 @@ module.exports = {
       template: './index.html',
     }),
     // Add the ReactRefreshWebpackPlugin only in development
-    isDevelopment && new ReactRefreshWebpackPlugin(),
+    //isDevelopment && new ReactRefreshWebpackPlugin(),
   ].filter(Boolean),
   resolve: {
     extensions: ['.js', '.jsx'],
