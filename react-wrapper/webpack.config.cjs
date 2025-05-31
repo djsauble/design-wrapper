@@ -1,6 +1,5 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { ModuleFederationPlugin } = require('@module-federation/enhanced/webpack');
-const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const path = require('path');
 const deps = require('./package.json').dependencies;
 
@@ -21,7 +20,6 @@ module.exports = {
     headers: {
       'Access-Control-Allow-Origin': '*',
     },
-    // historyApiFallback: true, // If you use client-side routing
   },
   module: {
     rules: [
@@ -32,9 +30,6 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: ['@babel/preset-env', '@babel/preset-react'],
-            plugins: [
-              //isDevelopment && require.resolve('react-refresh/babel')
-            ].filter(Boolean),
           },
         },
       },
@@ -45,11 +40,9 @@ module.exports = {
     ],
   },
   plugins: [
-    //process.env.NODE_ENV === 'development' && new (require('react-refresh-webpack-plugin'))(),
     new ModuleFederationPlugin({
       name: 'hostApp',
       remotes: {
-        // The URL for remoteEntry.js of your remote app
         remoteApp: `remoteApp@http://localhost:${remoteAppPort}/remoteEntry.js`,
       },
       shared: {
@@ -69,8 +62,6 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './index.html',
     }),
-    // Add the ReactRefreshWebpackPlugin only in development
-    //isDevelopment && new ReactRefreshWebpackPlugin(),
   ].filter(Boolean),
   resolve: {
     extensions: ['.js', '.jsx'],

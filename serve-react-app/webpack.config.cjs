@@ -1,6 +1,5 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { ModuleFederationPlugin } = require('@module-federation/enhanced/webpack');
-const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const path = require('path');
 const deps = require('./package.json').dependencies;
 require('dotenv').config({ path: './.env' });
@@ -21,8 +20,6 @@ module.exports = {
   entry: './src/index.js', // Create this dummy entry if it doesn't exist, Webpack needs an entry
   output: {
     publicPath: `http://localhost:${servePort}/`, // URL for the remote app
-    // filename: '[name].[contenthash].js', // Add contenthash for production if needed
-    // path: path.resolve(__dirname, 'dist'), // Output directory
   },
   devServer: {
     port: servePort,
@@ -40,9 +37,6 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: ['@babel/preset-env', '@babel/preset-react'],
-            plugins: [
-              //isDevelopment && require.resolve('react-refresh/babel')
-            ].filter(Boolean),
           },
         },
       },
@@ -84,14 +78,8 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './index.html', // Path to your host HTML file
     }),
-    //isDevelopment && new ReactRefreshWebpackPlugin(),
   ].filter(Boolean),
   resolve: {
     extensions: ['.js', '.jsx'],
-    // If your hello-world-app uses aliases, configure them here
-    // alias: {
-    //   // Example:
-    //   // Components: path.resolve(__dirname, '..', targetAppPath, 'src/components'),
-    // },
   },
 };
