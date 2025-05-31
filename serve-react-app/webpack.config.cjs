@@ -1,5 +1,6 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { ModuleFederationPlugin } = require('@module-federation/enhanced/webpack');
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const path = require('path');
 const deps = require('./package.json').dependencies;
 require('dotenv').config({ path: './.env' });
@@ -37,6 +38,9 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: ['@babel/preset-env', '@babel/preset-react'],
+            plugins: [
+              isDevelopment && require.resolve('react-refresh/babel')
+            ].filter(Boolean),
           },
         },
       },
@@ -78,6 +82,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './index.html', // Path to your host HTML file
     }),
+    isDevelopment && new ReactRefreshWebpackPlugin(),
   ].filter(Boolean),
   resolve: {
     extensions: ['.js', '.jsx'],
