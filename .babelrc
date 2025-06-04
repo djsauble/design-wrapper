@@ -1,0 +1,8 @@
+{
+  "presets": [
+    ["@babel/preset-react", {"runtime": "automatic"}]
+  ],
+  "plugins": [
+    "react-refresh/babel" // Add this if you're using react-refresh
+  ]
+}

@@ -1,0 +1,33 @@
+diff --git a/node_modules/@pmmmwh/react-refresh-webpack-plugin/lib/runtime/RefreshUtils.js b/node_modules/@pmmmwh/react-refresh-webpack-plugin/lib/runtime/RefreshUtils.js
+index 3e66f1e..80fb3c3 100644
+--- a/node_modules/@pmmmwh/react-refresh-webpack-plugin/lib/runtime/RefreshUtils.js
++++ b/node_modules/@pmmmwh/react-refresh-webpack-plugin/lib/runtime/RefreshUtils.js
+@@ -1,5 +1,9 @@
+ /* global __webpack_require__ */
+-var Refresh = require('react-refresh/runtime');
++var Refresh = window.__sharing_react_refresh_runtime__ || require('react-refresh/runtime');
++
++if(!window.__sharing_react_refresh_runtime__) {
++  Object.assign(window, { __sharing_react_refresh_runtime__: Refresh });
++}
+ 
+ /**
+  * Extracts exports from a webpack module object.
+diff --git a/node_modules/@pmmmwh/react-refresh-webpack-plugin/loader/index.js b/node_modules/@pmmmwh/react-refresh-webpack-plugin/loader/index.js
+index a2e066a..8c9c894 100644
+--- a/node_modules/@pmmmwh/react-refresh-webpack-plugin/loader/index.js
++++ b/node_modules/@pmmmwh/react-refresh-webpack-plugin/loader/index.js
+@@ -45,11 +45,11 @@ function ReactRefreshLoader(source, inputSourceMap, meta) {
+ 
+   const RefreshSetupRuntimes = {
+     cjs: Template.asString(
+-      `__webpack_require__.$Refresh$.runtime = require('${RefreshRuntimePath}');`
++      `__webpack_require__.$Refresh$.runtime = window.__sharing_react_refresh_runtime__ || require('${RefreshRuntimePath}');`
+     ),
+     esm: Template.asString([
+       `import * as __react_refresh_runtime__ from '${RefreshRuntimePath}';`,
+-      `__webpack_require__.$Refresh$.runtime = __react_refresh_runtime__;`,
++      `__webpack_require__.$Refresh$.runtime = window.__sharing_react_refresh_runtime__ || __react_refresh_runtime__;`,
+     ]),
+   };
+ 
