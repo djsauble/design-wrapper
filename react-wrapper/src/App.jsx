@@ -2,6 +2,7 @@ import React, { useEffect, lazy, Suspense } from 'react';
 import './App.css'
 
 const RemoteComponent = lazy(() => import('remoteApp/Component'));
+const ButtonComponent = lazy(() => import('remoteApp/Button'));
 
 function App() {
   return (
@@ -11,6 +12,9 @@ function App() {
       </header>
       <main className="host-content">
         {/* Remote component will mount here */}
+        <Suspense fallback="Loading remote component...">
+          <ButtonComponent />
+        </Suspense>
         <Suspense fallback="Loading remote component...">
           <RemoteComponent />
         </Suspense>

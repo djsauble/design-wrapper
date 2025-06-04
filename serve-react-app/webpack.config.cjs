@@ -61,6 +61,7 @@ module.exports = {
       exposes: {
         // Webpack needs an absolute path or a path relative to the context (which is serve-react-app by default)
         './Component': path.resolve(targetAppPath, targetAppEntryPoint),
+        "./Button": "./src/Button",
       },
       shared: {
         ...deps, // Share dependencies from package.json
