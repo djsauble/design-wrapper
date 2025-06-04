@@ -6,8 +6,6 @@ const deps = require('./package.json').dependencies;
 require('dotenv').config({ path: './.env' });
 
 // Load environment variables
-// Make sure you have a .env file in serve-react-app with TARGET_APP_PATH, TARGET_APP_ENTRY_POINT, and SERVE_PORT
-// or define them directly here if you prefer.
 if (!process.env.TARGET_APP_PATH || !process.env.TARGET_APP_ENTRY_POINT) {
   throw new Error('TARGET_APP_PATH and TARGET_APP_ENTRY_POINT must be defined in .env or environment');
 }
@@ -18,10 +16,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 
 module.exports = {
   mode: isDevelopment ? 'development' : 'production',
-  entry: './src/index.js', // Create this dummy entry if it doesn't exist, Webpack needs an entry
-  output: {
-    publicPath: `http://localhost:${servePort}/`, // URL for the remote app
-  },
+  entry: './src/index.js',
   devServer: {
     port: servePort,
     headers: {

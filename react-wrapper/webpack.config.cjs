@@ -11,9 +11,9 @@ const hostAppPort = process.env.HOST_APP_PORT || 5173;   // Port for this host a
 
 module.exports = {
   mode: isDevelopment ? 'development' : 'production',
-  entry: './src/main.jsx', // Your existing entry point
+  entry: './src/main.jsx',
   output: {
-    publicPath: 'auto', // Or `http://localhost:${hostAppPort}/`
+    publicPath: 'auto',
   },
   devServer: {
     port: hostAppPort,
