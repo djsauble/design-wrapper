@@ -15,6 +15,9 @@ module.exports = {
   output: {
     publicPath: 'auto', // Or `http://localhost:${hostAppPort}/`
   },
+  optimization: {
+    runtimeChunk: isDevelopment ? 'single' : false
+  },
   devServer: {
     port: hostAppPort,
     hot: true, // HMR is enabled by default
