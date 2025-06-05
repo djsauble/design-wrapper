@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useRef } from 'react';
+import React, { lazy, Suspense, useRef, useState, useEffect } from 'react';
 import './App.css';
 import AnnotationCanvas from './AnnotationCanvas'; // Import the new component
 
@@ -8,48 +8,111 @@ import { domToPng } from 'modern-screenshot';
 
 function App() {
   const annotationCanvasRef = useRef(null);
-  const [isAnnotating, setIsAnnotating] = React.useState(false);
-  const [message, setMessage] = React.useState('');
+  const [isAnnotating, setIsAnnotating] = useState(false);
+  const [message, setMessage] = useState('');
+  const [claudeResponse, setClaudeResponse] = useState('');
+  const eventSourceRef = useRef(null); // Ref to hold the EventSource instance
 
   const sendPrompt = async () => {
     try {
-      const node = document.querySelector('.main-content');
+      // Close any existing connection
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
 
+      const node = document.querySelector('.main-content');
       if (!node) {
         throw new Error('Could not find .main-content element');
       }
 
       const dataUrl = await domToPng(node);
 
-      // Send base64 image string, message, and directory to the /api/data endpoint
-      await fetch('http://localhost:3001/api/data', {
+      // Clear previous response
+      setClaudeResponse('');
+      console.log('Claude response cleared.');
+
+      // Upload screenshot first
+      console.log('Uploading screenshot...');
+      const uploadResponse = await fetch('http://localhost:3001/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          screenshot: dataUrl,
-          message: message
-        })
+        body: JSON.stringify({ screenshot: dataUrl })
       });
-      console.log('Screenshot and message sent to server!');
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.statusText} (status: ${uploadResponse.status})`);
+      }
+
+      const { filename } = await uploadResponse.json();
+
+      // Establish SSE connection with filename
+      const sseUrl = `http://localhost:3001/api/data?filename=${encodeURIComponent(filename)}&message=${encodeURIComponent(message)}`;
+      const newEventSource = new EventSource(sseUrl);
+      eventSourceRef.current = newEventSource; // Store the new EventSource instance
+
+      // Listen for named 'data' events
+      newEventSource.addEventListener('data', (event) => {
+        // Assuming event.data is a string. If it's JSON, parse it.
+        // e.g., const parsedData = JSON.parse(event.data);
+        setClaudeResponse(prev => prev + event.data);
+      });
+
+      // Listen for named 'end' events
+      newEventSource.addEventListener('end', (event) => {
+        // Optionally, you could append the 'end' event data too, or handle it differently.
+        // For example: setClaudeResponse(prev => prev + "\nStream finished: " + event.data);
+        if (event.data) { // Check if there's data with the end event
+            setClaudeResponse(prev => prev + (prev ? "\n" : "") + `Final message: ${event.data}`);
+        }
+        newEventSource.close();
+        eventSourceRef.current = null; // Clear the ref
+      });
+
+      newEventSource.onerror = (error) => {
+        // The 'error' event object for EventSource is usually a generic Event.
+        // The actual error details are often not directly in 'error.data'.
+        // It indicates a connection error.
+        console.error('EventSource failed. ReadyState:', newEventSource.readyState, 'Error object:', error);
+        // Additional error information might be logged by the browser itself.
+        // Consider logging the URL or other context if errors persist.
+        setClaudeResponse(prev => prev + "\nError connecting to stream.");
+        newEventSource.close();
+        eventSourceRef.current = null; // Clear the ref
+      };
+
     } catch (err) {
-      console.log('Screenshot failed: ' + err.message);
+      console.error('Prompt failed:', err.message, err);
+      setClaudeResponse(`Error: ${err.message}`);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     }
   };
 
   const handleAnnotateToggle = () => {
     if (isAnnotating) {
-      // If turning off annotation, clear the canvas
       annotationCanvasRef.current?.clearCanvas();
     }
     setIsAnnotating(!isAnnotating);
   };
 
+  // Cleanup useEffect to close EventSource when component unmounts
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+  }, []); // Empty dependency array ensures this runs only on mount and unmount
+
   return (
     <div className="app-container">
       <header className="sidebar">
-        <div className="agent-response-placeholder">
-          {/* Dummy div for agent response */}
-          Agent response will go here.
+        <div className="agent-response-placeholder" style={{ whiteSpace: 'pre-wrap' }}>
+          {/* Display streamed agent response */}
+          {claudeResponse || 'Agent response will go here.'}
         </div>
         <textarea
           placeholder="What change do you want to make?"
@@ -64,15 +127,13 @@ function App() {
         </div>
       </header>
       <main className="main-content">
-        {/* Remote component will mount here */}
         <Suspense fallback="Loading remote component...">
           <RemoteComponent />
         </Suspense>
-        {/* Add the annotation canvas */}
         <AnnotationCanvas ref={annotationCanvasRef} isVisible={isAnnotating} />
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
