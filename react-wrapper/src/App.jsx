@@ -11,9 +11,15 @@ function App() {
 
   const handleScreenshot = async () => {
     try {
-      const node = document.querySelector('.host-content');
-      if (!node) throw new Error('Could not find .host-content element');
+      const node = document.querySelector('.main-content');
+      console.log(node);
+
+      if (!node) {
+        throw new Error('Could not find .main-content element');
+      }
+
       const dataUrl = await domtoimage.toPng(node);
+
       // Send base64 image string to the /api/data endpoint
       await fetch('http://localhost:3001/api/data', {
         method: 'POST',
@@ -30,8 +36,14 @@ function App() {
     <div className="app-container">
       <header className="sidebar">
         <h1>Host Application Shell</h1>
-        <button onClick={handleScreenshot}>Take Screenshot</button>
-        <button onClick={() => annotationCanvasRef.current?.clearCanvas()}>Clear Annotations</button>
+        <div className="agent-response-placeholder">
+          {/* Dummy div for agent response */}
+          Agent response will go here.
+        </div>
+        <div className="sidebar-buttons">
+          <button onClick={handleScreenshot}>Take Screenshot</button>
+          <button onClick={() => annotationCanvasRef.current?.clearCanvas()}>Clear</button>
+        </div>
       </header>
       <main className="main-content">
         {/* Remote component will mount here */}

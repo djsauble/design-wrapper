@@ -84,4 +84,4 @@ const AnnotationCanvas = React.forwardRef((props, ref) => {
   );
 });
 
-export default React.memo(AnnotationCanvas);
+export default AnnotationCanvas;
