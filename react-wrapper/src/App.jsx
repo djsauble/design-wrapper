@@ -8,7 +8,7 @@ function App() {
   const handleScreenshot = async () => {
     const element = document.querySelector('.host-content');
     if (element) {
-      const canvas = await html2canvas(element);
+      const canvas = await html2canvas(element, { allowTaint: true, useCORS: true });
       const dataUrl = canvas.toDataURL('image/png');
 
       try {
