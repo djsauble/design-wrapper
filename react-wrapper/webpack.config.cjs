@@ -59,9 +59,9 @@ module.exports = {
           requiredVersion: deps['react-dom'],
           eager: true,
         },
-        'dom-to-image': {
+        'modern-screenshot': {
           singleton: true,
-          requiredVersion: deps['dom-to-image'],
+          requiredVersion: deps['modern-screenshot'],
           eager: true,
         },
       },

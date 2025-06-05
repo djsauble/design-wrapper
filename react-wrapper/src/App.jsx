@@ -4,7 +4,7 @@ import AnnotationCanvas from './AnnotationCanvas'; // Import the new component
 
 const RemoteComponent = lazy(() => import('remoteApp/Component'));
 
-import domtoimage from 'dom-to-image';
+import { domToPng } from 'modern-screenshot';
 
 function App() {
   const annotationCanvasRef = useRef(null);
@@ -12,13 +12,12 @@ function App() {
   const handleScreenshot = async () => {
     try {
       const node = document.querySelector('.main-content');
-      console.log(node);
 
       if (!node) {
         throw new Error('Could not find .main-content element');
       }
 
-      const dataUrl = await domtoimage.toPng(node);
+      const dataUrl = await domToPng(node);
 
       // Send base64 image string to the /api/data endpoint
       await fetch('http://localhost:3001/api/data', {
