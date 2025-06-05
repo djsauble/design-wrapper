@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useRef } from 'react';
 import './App.css';
 import AnnotationCanvas from './AnnotationCanvas'; // Import the new component
 
@@ -7,6 +7,8 @@ const RemoteComponent = lazy(() => import('remoteApp/Component'));
 import domtoimage from 'dom-to-image';
 
 function App() {
+  const annotationCanvasRef = useRef(null);
+
   const handleScreenshot = async () => {
     try {
       const node = document.querySelector('.host-content');
@@ -29,6 +31,7 @@ function App() {
       <header className="host-header">
         <h1>Host Application Shell</h1>
         <button onClick={handleScreenshot}>Take Screenshot</button>
+        <button onClick={() => annotationCanvasRef.current?.clearCanvas()}>Clear Annotations</button>
       </header>
       <main className="host-content">
         {/* Remote component will mount here */}
@@ -36,7 +39,7 @@ function App() {
           <RemoteComponent />
         </Suspense>
         {/* Add the annotation canvas */}
-        <AnnotationCanvas />
+        <AnnotationCanvas ref={annotationCanvasRef} />
       </main>
     </div>
   )

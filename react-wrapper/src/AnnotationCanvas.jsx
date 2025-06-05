@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 
-const AnnotationCanvas = () => {
+const AnnotationCanvas = React.forwardRef((props, ref) => {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
   const lastPos = useRef(null);
@@ -56,6 +56,16 @@ const AnnotationCanvas = () => {
     // No cleanup needed as event listeners are added only once
   }, []); // Empty dependency array means this effect runs only once on mount
 
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  React.useImperativeHandle(ref, () => ({
+    clearCanvas
+  }));
+
   const draw = (pos1, pos2, context) => {
     context.beginPath();
     context.moveTo(pos1.x, pos1.y);
@@ -72,6 +82,6 @@ const AnnotationCanvas = () => {
       }}
     />
   );
-};
+});
 
-export default AnnotationCanvas;
+export default React.memo(AnnotationCanvas);
