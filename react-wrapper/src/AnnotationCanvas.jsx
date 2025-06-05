@@ -48,10 +48,10 @@ const AnnotationCanvas = React.forwardRef((props, ref) => {
       lastPos.current = null;
     };
 
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
-    canvas.addEventListener('mouseout', handleMouseOut);
+    canvas.addEventListener('pointerdown', handleMouseDown);
+    canvas.addEventListener('pointermove', handleMouseMove);
+    canvas.addEventListener('pointerup', handleMouseUp);
+    canvas.addEventListener('pointerout', handleMouseOut);
 
     // No cleanup needed as event listeners are added only once
   }, []); // Empty dependency array means this effect runs only once on mount
