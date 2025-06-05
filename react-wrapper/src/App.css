@@ -8,13 +8,15 @@
 .host-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
 }
 
 .host-header {
   background-color: #242424;
   padding: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .host-header h1 {
@@ -24,14 +26,16 @@
 }
 
 .host-content {
-  flex: 1;
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
+  padding: 0;
+  margin: 0;
+  position: relative; /* Add position relative for absolute positioning of canvas */
+  flex-grow: 1;
 }
 
-/* Style for child app container */
-#childApp {
-  margin-top: 2rem;
+.host-content > * {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
 }

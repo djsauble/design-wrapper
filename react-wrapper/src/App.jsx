@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import './App.css';
+import AnnotationCanvas from './AnnotationCanvas'; // Import the new component
 
 const RemoteComponent = lazy(() => import('remoteApp/Component'));
 
@@ -34,6 +35,8 @@ function App() {
         <Suspense fallback="Loading remote component...">
           <RemoteComponent />
         </Suspense>
+        {/* Add the annotation canvas */}
+        <AnnotationCanvas />
       </main>
     </div>
   )
