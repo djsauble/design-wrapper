@@ -47,7 +47,6 @@ function App() {
   return (
     <div className="app-container">
       <header className="sidebar">
-        <h1>Host Application Shell</h1>
         <div className="agent-response-placeholder">
           {/* Dummy div for agent response */}
           Agent response will go here.

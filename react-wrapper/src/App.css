@@ -20,6 +20,7 @@
   flex-direction: column;
   justify-content: space-between; /* Push buttons to the bottom */
   flex-shrink: 0;
+  gap: 1em;
 }
 
 .sidebar h1 {
@@ -71,6 +72,5 @@
   border: 1px solid #ccc;
   border-radius: 4px;
   background-color: #fff;
-  margin-bottom: 1rem; /* Space between placeholder and buttons */
   overflow-y: auto; /* Add scroll if content overflows */
 }
