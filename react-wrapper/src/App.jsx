@@ -1,33 +1,25 @@
-import React, { useEffect, lazy, Suspense } from 'react';
+import React, { lazy, Suspense } from 'react';
 import './App.css';
-import html2canvas from 'html2canvas';
 
 const RemoteComponent = lazy(() => import('remoteApp/Component'));
 
+import domtoimage from 'dom-to-image';
+
 function App() {
   const handleScreenshot = async () => {
-    const element = document.querySelector('.host-content');
-    if (element) {
-      const canvas = await html2canvas(element, { allowTaint: true, useCORS: true });
-      const dataUrl = canvas.toDataURL('image/png');
-
-      try {
-        const response = await fetch('http://localhost:3001/api/data', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ screenshot: dataUrl }),
-        });
-
-        if (response.ok) {
-          console.log('Screenshot sent successfully!');
-        } else {
-          console.error('Failed to send screenshot:', response.statusText);
-        }
-      } catch (error) {
-        console.error('Error sending screenshot:', error);
-      }
+    try {
+      const node = document.querySelector('.host-content');
+      if (!node) throw new Error('Could not find .host-content element');
+      const dataUrl = await domtoimage.toPng(node);
+      // Send base64 image string to the /api/data endpoint
+      await fetch('http://localhost:3001/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ screenshot: dataUrl })
+      });
+      console.log('Screenshot sent to server!');
+    } catch (err) {
+      console.log('Screenshot failed: ' + err.message);
     }
   };
 

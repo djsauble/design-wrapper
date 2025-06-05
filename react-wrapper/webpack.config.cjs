@@ -49,7 +49,6 @@ module.exports = {
         remoteApp: `remoteApp@http://localhost:${remoteAppPort}/remoteEntry.js`,
       },
       shared: {
-        ...deps,
         react: {
           singleton: true,
           requiredVersion: deps.react,
@@ -58,6 +57,11 @@ module.exports = {
         'react-dom': {
           singleton: true,
           requiredVersion: deps['react-dom'],
+          eager: true,
+        },
+        'dom-to-image': {
+          singleton: true,
+          requiredVersion: deps['dom-to-image'],
           eager: true,
         },
       },

@@ -57,7 +57,6 @@ module.exports = {
         './Component': path.resolve(targetAppPath, targetAppEntryPoint),
       },
       shared: {
-        ...deps, // Share dependencies from package.json
         react: {
           singleton: true,
           requiredVersion: deps.react,
