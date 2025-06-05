@@ -27,13 +27,13 @@ function App() {
   };
 
   return (
-    <div className="host-container">
-      <header className="host-header">
+    <div className="app-container">
+      <header className="sidebar">
         <h1>Host Application Shell</h1>
         <button onClick={handleScreenshot}>Take Screenshot</button>
         <button onClick={() => annotationCanvasRef.current?.clearCanvas()}>Clear Annotations</button>
       </header>
-      <main className="host-content">
+      <main className="main-content">
         {/* Remote component will mount here */}
         <Suspense fallback="Loading remote component...">
           <RemoteComponent />

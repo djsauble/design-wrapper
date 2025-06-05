@@ -5,37 +5,57 @@
   text-align: center;
 }
 
-.host-container {
+.app-container {
   display: flex;
-  flex-direction: column;
   height: 100vh;
   width: 100vw;
 }
 
-.host-header {
-  background-color: #242424;
+.sidebar {
+  width: 250px; /* Adjust width as needed */
+  background-color: #f0f0f0; /* Light background for sidebar */
   padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Push buttons to the bottom */
   flex-shrink: 0;
 }
 
-.host-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #fff;
+.sidebar h1 {
+  margin-top: 0;
+  font-size: 1.2rem;
+  color: #333;
 }
 
-.host-content {
+.main-content {
+  flex-grow: 1;
   padding: 0;
   margin: 0;
   position: relative; /* Add position relative for absolute positioning of canvas */
-  flex-grow: 1;
+  overflow: hidden; /* Prevent content from overflowing */
 }
 
-.host-content > * {
+.main-content > * {
   position: absolute;
   left: 0;
   width: 100%;
   height: 100%;
   overflow-y: auto;
+}
+
+/* Styles for buttons to look like chat input/submit */
+.sidebar button {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.sidebar button:hover {
+  background-color: #e0e0e0;
 }
