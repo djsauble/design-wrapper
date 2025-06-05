@@ -9,8 +9,9 @@ import { domToPng } from 'modern-screenshot';
 function App() {
   const annotationCanvasRef = useRef(null);
   const [isAnnotating, setIsAnnotating] = React.useState(false);
+  const [message, setMessage] = React.useState('');
 
-  const handleScreenshot = async () => {
+  const sendPrompt = async () => {
     try {
       const node = document.querySelector('.main-content');
 
@@ -20,13 +21,16 @@ function App() {
 
       const dataUrl = await domToPng(node);
 
-      // Send base64 image string to the /api/data endpoint
+      // Send base64 image string, message, and directory to the /api/data endpoint
       await fetch('http://localhost:3001/api/data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ screenshot: dataUrl })
+        body: JSON.stringify({
+          screenshot: dataUrl,
+          message: message
+        })
       });
-      console.log('Screenshot sent to server!');
+      console.log('Screenshot and message sent to server!');
     } catch (err) {
       console.log('Screenshot failed: ' + err.message);
     }
@@ -48,8 +52,15 @@ function App() {
           {/* Dummy div for agent response */}
           Agent response will go here.
         </div>
+        <textarea
+          placeholder="What change do you want to make?"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows="4"
+          cols="30"
+        />
         <div className="sidebar-buttons">
-          <button onClick={handleScreenshot}>Take Screenshot</button>
+          <button onClick={sendPrompt}>Submit</button>
           <button onClick={handleAnnotateToggle}>{isAnnotating ? 'Clear' : 'Annotate'}</button>
         </div>
       </header>
