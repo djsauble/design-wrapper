@@ -8,6 +8,7 @@ import { domToPng } from 'modern-screenshot';
 
 function App() {
   const annotationCanvasRef = useRef(null);
+  const [isAnnotating, setIsAnnotating] = React.useState(false);
 
   const handleScreenshot = async () => {
     try {
@@ -31,6 +32,14 @@ function App() {
     }
   };
 
+  const handleAnnotateToggle = () => {
+    if (isAnnotating) {
+      // If turning off annotation, clear the canvas
+      annotationCanvasRef.current?.clearCanvas();
+    }
+    setIsAnnotating(!isAnnotating);
+  };
+
   return (
     <div className="app-container">
       <header className="sidebar">
@@ -41,7 +50,7 @@ function App() {
         </div>
         <div className="sidebar-buttons">
           <button onClick={handleScreenshot}>Take Screenshot</button>
-          <button onClick={() => annotationCanvasRef.current?.clearCanvas()}>Clear</button>
+          <button onClick={handleAnnotateToggle}>{isAnnotating ? 'Clear' : 'Annotate'}</button>
         </div>
       </header>
       <main className="main-content">
@@ -50,7 +59,7 @@ function App() {
           <RemoteComponent />
         </Suspense>
         {/* Add the annotation canvas */}
-        <AnnotationCanvas ref={annotationCanvasRef} />
+        <AnnotationCanvas ref={annotationCanvasRef} isVisible={isAnnotating} />
       </main>
     </div>
   )

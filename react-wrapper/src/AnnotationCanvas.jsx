@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 
-const AnnotationCanvas = React.forwardRef((props, ref) => {
+const AnnotationCanvas = React.forwardRef(({ isVisible }, ref) => {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
   const lastPos = useRef(null);
@@ -19,6 +19,7 @@ const AnnotationCanvas = React.forwardRef((props, ref) => {
     context.lineCap = 'round';
 
     const handleMouseDown = (e) => {
+      if (!isVisible) return; // Only draw if visible
       isDrawing.current = true;
       const rect = canvas.getBoundingClientRect();
       lastPos.current = {
@@ -28,7 +29,7 @@ const AnnotationCanvas = React.forwardRef((props, ref) => {
     };
 
     const handleMouseMove = (e) => {
-      if (!isDrawing.current) return;
+      if (!isDrawing.current || !isVisible) return; // Only draw if drawing and visible
       const rect = canvas.getBoundingClientRect();
       const currentPos = {
         x: e.clientX - rect.left,
@@ -53,13 +54,29 @@ const AnnotationCanvas = React.forwardRef((props, ref) => {
     canvas.addEventListener('pointerup', handleMouseUp);
     canvas.addEventListener('pointerout', handleMouseOut);
 
-    // No cleanup needed as event listeners are added only once
-  }, []); // Empty dependency array means this effect runs only once on mount
+    // Cleanup event listeners on unmount
+    return () => {
+      canvas.removeEventListener('pointerdown', handleMouseDown);
+      canvas.removeEventListener('pointermove', handleMouseMove);
+      canvas.removeEventListener('pointerup', handleMouseUp);
+      canvas.removeEventListener('pointerout', handleMouseOut);
+    };
+  }, [isVisible]); // Re-run effect if isVisible changes
+
+  useEffect(() => {
+    // Clear canvas when isVisible becomes false
+    if (!isVisible) {
+      clearCanvas();
+    }
+  }, [isVisible]); // Re-run effect if isVisible changes
+
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvas) { // Add null check for canvas
+      const context = canvas.getContext('2d');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    }
   };
 
   React.useImperativeHandle(ref, () => ({
@@ -79,6 +96,7 @@ const AnnotationCanvas = React.forwardRef((props, ref) => {
       style={{
         // Most styles are defined directly in App.css
         zIndex: 1, // Ensure canvas is above other content
+        display: isVisible ? 'block' : 'none', // Hide/show based on isVisible
       }}
     />
   );
