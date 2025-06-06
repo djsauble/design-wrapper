@@ -12,21 +12,30 @@ function App() {
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [message, setMessage] = useState('');
   const [claudeResponse, setClaudeResponse] = useState('');
+
   const systemPrompt = `
-  Additional context from the user: "\${userMessage}".
-  
+  Context:
+
+  The React component being edited is located at: \${targetComponentPath}
+  The annotated screenshot of the Reaact component is located at: \${screenshotPath}
+  Additional context from the user: "\${userMessage}"
+
+  Main rules:
+
   * Please make direct changes to the code files based on what you see in the screenshot and the additional context from the user (if any).
   * Do not make changes outside of the current working directory.
   * Do not just suggest changes - actually implement them.
-  * The annotations are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.
+  * The annotations in the screenshot are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.
   * Once you make the changes, reply with a summary of the changes in a single paragraph with no special formatting.
+  
+  Specific instructions:
   `;
 
   const promptTemplates = {
-    'Add component': `Please analyze the annotated screenshot at \${screenshotPath} and add new component(s) to the code as needed. ${systemPrompt}`,
-    'Remove component': `Please analyze the annotated screenshot at \${screenshotPath} and remove the specified component(s) from the code as needed. ${systemPrompt}`,
-    'Edit component': `Please analyze the annotated screenshot at \${screenshotPath} and edit the specified component(s) in the code as needed. Prefer changes to the existing code or direct imports rather than creating new files or editing files unrelated to or upstream of the existing component(s). ${systemPrompt}`,
-    'Adjust layout': `Please analyze the annotated screenshot at \${screenshotPath} and adjust the layout of the page in the code as needed. ${systemPrompt}`,
+    'Add component': `${systemPrompt}\nAdd new component(s) to the code as needed. Optimize for modularity and reusability.`,
+    'Remove component': `${systemPrompt}\nRemove the specified component(s) from the code as needed.`,
+    'Edit component': `${systemPrompt}\nEdit the specified component(s) in the code as needed. Prefer changes to the existing code or direct imports rather than creating new files or editing files unrelated to or upstream of the existing component(s).`,
+    'Adjust layout': `${systemPrompt}\nAdjust the layout of the page and components in the code as needed.`,
   };
 
   const [selectedPromptType, setSelectedPromptType] = useState('Add component');

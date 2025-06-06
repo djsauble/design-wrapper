@@ -40,10 +40,17 @@ app.use(express.json({ limit: '50mb' }));
 
 function callClaude(userMessage, screenshotPath, promptTemplate, res) {
   try {
-    const workingDirectory = process.env.TARGET_APP_PATH; // load from .env (TARGET_APP_PATH)
+    const workingDirectory = process.env.TARGET_APP_PATH;
+    const targetAppEntryPoint = process.env.TARGET_APP_ENTRY_POINT;
 
     if (!workingDirectory) {
       res.write('event: error\ndata: Missing required TARGET_APP_PATH environment variable. Please specify an absolute path to the working directory.\n\n');
+      res.end();
+      return;
+    }
+
+    if (!targetAppEntryPoint) {
+      res.write('event: error\ndata: Missing required TARGET_APP_ENTRY_POINT environment variable. Please specify the entry point of the target application (e.g. src/App).\n\n');
       res.end();
       return;
     }
@@ -70,7 +77,16 @@ function callClaude(userMessage, screenshotPath, promptTemplate, res) {
       return;
     }
 
+    // Validate that the target component path is valid
+    const targetComponentPath = `${workingDirectory}/${targetAppEntryPoint}`;
+    if (!fs.existsSync(targetComponentPath)) {
+      res.write(`event: error\ndata: Target component path does not exist: ${targetComponentPath}\n\n`);
+      res.end();
+      return;
+    }
+
     const prompt = promptTemplate
+      .replace('${targetComponentPath}', targetComponentPath)
       .replace('${screenshotPath}', screenshotPath)
       .replace('${userMessage}', userMessage);
 
