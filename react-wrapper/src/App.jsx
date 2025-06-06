@@ -9,6 +9,7 @@ import { domToPng } from 'modern-screenshot';
 function App() {
   const annotationCanvasRef = useRef(null);
   const [isAnnotating, setIsAnnotating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [message, setMessage] = useState('');
   const [claudeResponse, setClaudeResponse] = useState('');
   const [promptTemplate, setPromptTemplate] = useState(`Please analyze the annotated screenshot at \${screenshotPath} and make changes to the code as needed.
@@ -19,6 +20,7 @@ Please make direct changes to the code files based on what you see in the screen
   const eventSourceRef = useRef(null);
 
   const sendPrompt = async () => {
+    setIsLoading(true); // Start loading
     try {
       // Close any existing connection
       if (eventSourceRef.current) {
@@ -71,6 +73,7 @@ Please make direct changes to the code files based on what you see in the screen
         }
         newEventSource.close();
         eventSourceRef.current = null; // Clear the ref
+        setIsLoading(false); // End loading on success
       });
 
       newEventSource.onerror = (error) => {
@@ -83,9 +86,11 @@ Please make direct changes to the code files based on what you see in the screen
         setClaudeResponse(prev => prev + "\nError connecting to stream.");
         newEventSource.close();
         eventSourceRef.current = null; // Clear the ref
+        setIsLoading(false); // End loading on error
       };
 
     } catch (err) {
+      setIsLoading(false); // End loading on error
       console.error('Prompt failed:', err.message, err);
       setClaudeResponse(`Error: ${err.message}`);
       if (eventSourceRef.current) {
@@ -101,6 +106,13 @@ Please make direct changes to the code files based on what you see in the screen
     }
     setIsAnnotating(!isAnnotating);
   };
+
+  // Clear the canvas once we've received a response from Claude
+  useEffect(() => {
+    if (isAnnotating && !isLoading) {
+      annotationCanvasRef.current?.clearCanvas();
+    }
+  }, [isLoading])
 
   // Cleanup useEffect to close EventSource when component unmounts
   useEffect(() => {
@@ -127,15 +139,15 @@ Please make direct changes to the code files based on what you see in the screen
           cols="30"
         />
         <textarea
-          placeholder="What change do you want to make?"
+          placeholder="Optional: Provide additional context for the agent..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows="4"
           cols="30"
         />
         <div className="sidebar-buttons">
-          <button onClick={sendPrompt}>Submit</button>
-          <button onClick={handleAnnotateToggle}>{isAnnotating ? 'Clear' : 'Annotate'}</button>
+          <button onClick={sendPrompt} disabled={isLoading}>Submit</button>
+          <button onClick={handleAnnotateToggle} disabled={isLoading}>{isAnnotating ? 'Clear' : 'Annotate'}</button>
         </div>
       </header>
       <main className="main-content">
@@ -143,6 +155,16 @@ Please make direct changes to the code files based on what you see in the screen
           <RemoteComponent />
         </Suspense>
         <AnnotationCanvas ref={annotationCanvasRef} isVisible={isAnnotating} />
+
+        {/* Progress Modal */}
+        {isLoading && (
+          <div className="progress-modal-overlay">
+            <div className="progress-modal-content">
+              <div className="spinner"></div> {/* Simple spinner placeholder */}
+              <p>Processing...</p>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
