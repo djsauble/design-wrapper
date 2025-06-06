@@ -118,3 +118,7 @@
   background-color: #fff;
   overflow-y: auto; /* Add scroll if content overflows */
 }
+
+#remote-component-container {
+  background-color: white;
+}
