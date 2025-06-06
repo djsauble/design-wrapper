@@ -12,7 +12,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [message, setMessage] = useState('');
   const [claudeResponse, setClaudeResponse] = useState('');
-  const systemPrompt = ```
+  const systemPrompt = `
   Additional context from the user: "\${userMessage}".
   
   * Please make direct changes to the code files based on what you see in the screenshot and the additional context from the user (if any).
@@ -20,7 +20,7 @@ function App() {
   * Do not just suggest changes - actually implement them.
   * The annotations are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.
   * Once you make the changes, reply with a summary of the changes in a single paragraph with no special formatting.
-  ```;
+  `;
 
   const promptTemplates = {
     'Add component': `Please analyze the annotated screenshot at \${screenshotPath} and add new component(s) to the code as needed. ${systemPrompt}`,
