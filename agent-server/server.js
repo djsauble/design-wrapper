@@ -38,7 +38,7 @@ app.use((req, res, next) => {
 // Increase JSON payload limit to handle large screenshots
 app.use(express.json({ limit: '50mb' }));
 
-function callClaude(userMessage, screenshotPath, res) {
+function callClaude(userMessage, screenshotPath, promptTemplate, res) {
   try {
     const workingDirectory = process.env.AGENT_CODE_DIR; // load from .env (AGENT_CODE_DIR)
 
@@ -70,15 +70,9 @@ function callClaude(userMessage, screenshotPath, res) {
       return;
     }
 
-    const prompt = `Please analyze the annotated screenshot at ${screenshotPath} and make changes to the code as needed.
-
-Additional context from the user: ${userMessage}
-
-Please make direct changes to the code files based on what you see in the screenshot. Do not make changes outside of the current working directory. Do not just suggest changes - actually implement them. The annotations are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.`;
-
-    console.log('Prompt being sent to Claude:');
-    console.log(prompt);
-    console.log('---');
+    const prompt = promptTemplate
+      .replace('${screenshotPath}', screenshotPath)
+      .replace('${userMessage}', userMessage);
 
     // Spawn Claude process in headless mode (TODO: made the path to mcp-servers.json configurable)
     const claude = spawn('claude', ['-p', '--mcp-config', '../agent-server/mcp-servers.json', '--allowedTools', 'mcp__filesystem__read_file,mcp__filesystem__read_multiple_files,mcp__filesystem__write_file,mcp__filesystem__edit_file,mcp__filesystem__create_directory,mcp__filesystem__list_directory,mcp__filesystem__move_file,mcp__filesystem__search_files,mcp__filesystem__get_file_info,mcp__filesystem__list_allowed_directories'], {
@@ -171,7 +165,7 @@ app.get('/api/data', async (req, res) => {
     }
 
     // Call Claude with the saved screenshot and specified working directory, passing the response object
-    callClaude(req.query.message, filepath, res);
+    callClaude(req.query.message, filepath, req.query.promptTemplate, res);
 
   } catch (error) {
     console.error('Error processing request:', error);

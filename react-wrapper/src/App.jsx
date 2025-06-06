@@ -11,6 +11,11 @@ function App() {
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [message, setMessage] = useState('');
   const [claudeResponse, setClaudeResponse] = useState('');
+  const [promptTemplate, setPromptTemplate] = useState(`Please analyze the annotated screenshot at \${screenshotPath} and make changes to the code as needed.
+
+Additional context from the user: \${userMessage}
+
+Please make direct changes to the code files based on what you see in the screenshot. Do not make changes outside of the current working directory. Do not just suggest changes - actually implement them. The annotations are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.`);
   const eventSourceRef = useRef(null); // Ref to hold the EventSource instance
 
   const sendPrompt = async () => {
@@ -46,7 +51,7 @@ function App() {
       const { filename } = await uploadResponse.json();
 
       // Establish SSE connection with filename
-      const sseUrl = `http://localhost:3001/api/data?filename=${encodeURIComponent(filename)}&message=${encodeURIComponent(message)}`;
+      const sseUrl = `http://localhost:3001/api/data?filename=${encodeURIComponent(filename)}&message=${encodeURIComponent(message)}&promptTemplate=${encodeURIComponent(promptTemplate)}`;
       const newEventSource = new EventSource(sseUrl);
       eventSourceRef.current = newEventSource; // Store the new EventSource instance
 
@@ -114,6 +119,13 @@ function App() {
           {/* Display streamed agent response */}
           {claudeResponse || 'Agent response will go here.'}
         </div>
+        <textarea
+          placeholder="Edit prompt template here..."
+          value={promptTemplate}
+          onChange={(e) => setPromptTemplate(e.target.value)}
+          rows="10"
+          cols="30"
+        />
         <textarea
           placeholder="What change do you want to make?"
           value={message}
