@@ -114,6 +114,23 @@ function App() {
     }
   };
 
+  const handleGitAction = async (endpoint) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:3001${endpoint}`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      console.log(`${endpoint} response:`, data);
+      // Optionally display a message to the user based on the response
+    } catch (error) {
+      console.error(`Error calling ${endpoint}:`, error);
+      // Optionally display an error message to the user
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAnnotateToggle = () => {
     if (isAnnotating) {
       annotationCanvasRef.current?.clearCanvas();
@@ -163,6 +180,10 @@ function App() {
         <div className="sidebar-buttons">
           <button onClick={sendPrompt} disabled={isLoading}>Submit</button>
           <button onClick={handleAnnotateToggle} disabled={isLoading}>{isAnnotating ? 'Clear' : 'Annotate'}</button>
+          <button onClick={() => handleGitAction('/api/undo')} disabled={isLoading}>↺</button>
+          <button onClick={() => handleGitAction('/api/redo')} disabled={isLoading}>↻</button>
+          <button onClick={() => handleGitAction('/api/approve')} disabled={isLoading}>💾</button>
+          <button onClick={() => handleGitAction('/api/reset')} disabled={isLoading}>🗑️</button>
         </div>
         { claudeResponse !== '' && (
           <div className="agent-response">{claudeResponse}</div>
