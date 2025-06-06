@@ -120,7 +120,16 @@ function callClaude(userMessage, screenshotPath, promptTemplate, res) {
     // Handle process close
     claude.on('close', (code) => {
       if (code === 0) {
-        res.write(`event: end\ndata: Claude has processed the request and made changes to the code.\n\n`);
+        try {
+          // Commit the changes
+          execSync('git add .', { cwd: workingDirectory });
+          execSync('git commit -m "Claude made changes"', { cwd: workingDirectory });
+          console.log('✓ Changes committed to Git');
+          res.write(`event: end\ndata: Claude has processed the request and made changes to the code.\n\n`);
+        } catch (gitError) {
+          console.error('Error committing changes:', gitError);
+          res.write(`event: error\ndata: Failed to commit changes: ${gitError.message}\n\n`);
+        }
       } else {
         res.write(`event: error\ndata: Claude exited with code ${code}\n\n`);
       }
@@ -187,6 +196,9 @@ app.get('/api/data', async (req, res) => {
       return;
     }
 
+    const workingDirectory = process.env.TARGET_APP_PATH;
+    ensureGitBranch(workingDirectory);
+
     // Call Claude with the saved screenshot and specified working directory, passing the response object
     callClaude(req.query.message, filepath, req.query.promptTemplate, res);
 
@@ -196,6 +208,115 @@ app.get('/api/data', async (req, res) => {
     res.end();
   }
 });
+
+// Undo endpoint
+app.post('/api/undo', (req, res) => {
+  try {
+    const workingDirectory = process.env.TARGET_APP_PATH;
+    const currentCommit = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
+    const parentCommit = execSync('git rev-parse HEAD^', { cwd: workingDirectory }).toString().trim();
+
+    if (parentCommit !== initialMainBranchHead) {
+      execSync(`git checkout ${parentCommit}`, { cwd: workingDirectory });
+      console.log(`✓ Checked out previous commit: ${parentCommit}`);
+      res.json({ message: `Checked out previous commit: ${parentCommit}` });
+    } else {
+      console.log('Already at the initial main branch commit. Cannot undo further.');
+      res.status(400).json({ message: 'Already at the initial main branch commit. Cannot undo further.' });
+    }
+  } catch (error) {
+    console.error('Error undoing:', error);
+    res.status(500).json({ message: 'Failed to undo', error: error.message });
+  }
+});
+
+// Redo endpoint
+app.post('/api/redo', (req, res) => {
+  try {
+    const workingDirectory = process.env.TARGET_APP_PATH;
+    const currentCommit = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
+    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: workingDirectory }).toString().trim();
+    const latestCommit = execSync(`git rev-parse ${currentBranch}`, { cwd: workingDirectory }).toString().trim();
+
+    if (currentCommit !== latestCommit) {
+      const nextCommit = execSync(`git log --reverse --ancestry-path ${currentCommit}..${currentBranch} --format="%H" | head -n 1`, { cwd: workingDirectory }).toString().trim();
+      if (nextCommit) {
+        execSync(`git checkout ${nextCommit}`, { cwd: workingDirectory });
+        console.log(`✓ Checked out next commit: ${nextCommit}`);
+        res.json({ message: `Checked out next commit: ${nextCommit}` });
+      } else {
+        console.log('No next commit found on the current branch.');
+        res.status(400).json({ message: 'No next commit found on the current branch.' });
+      }
+    } else {
+      console.log('Already at the latest commit on the current branch. Cannot redo further.');
+      res.status(400).json({ message: 'Already at the latest commit on the current branch. Cannot redo further.' });
+    }
+  } catch (error) {
+    console.error('Error redoing:', error);
+    res.status(500).json({ message: 'Failed to redo', error: error.message });
+  }
+});
+
+// Reset endpoint
+app.post('/api/reset', (req, res) => {
+  try {
+    const workingDirectory = process.env.TARGET_APP_PATH;
+    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: workingDirectory }).toString().trim();
+
+    // Checkout main branch
+    execSync('git checkout main || git checkout master', { cwd: workingDirectory });
+    console.log('✓ Checked out main branch');
+
+    // Delete feature branch
+    if (currentBranch.startsWith('claude-feature-')) {
+      execSync(`git branch -D ${currentBranch}`, { cwd: workingDirectory });
+      console.log(`✓ Deleted feature branch: ${currentBranch}`);
+    }
+
+    initialMainBranchHead = null;
+    res.json({ message: 'Reset to main branch and deleted feature branch' });
+  } catch (error) {
+    console.error('Error resetting:', error);
+    res.status(500).json({ message: 'Failed to reset', error: error.message });
+  }
+});
+
+// Approve endpoint (squash merge)
+app.post('/api/approve', (req, res) => {
+  try {
+    const workingDirectory = process.env.TARGET_APP_PATH;
+    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: workingDirectory }).toString().trim();
+
+    if (!currentBranch.startsWith('claude-feature-')) {
+        res.status(400).json({ message: 'Not on a feature branch. Cannot approve.' });
+        return;
+    }
+
+    // Checkout main branch
+    execSync('git checkout main || git checkout master', { cwd: workingDirectory });
+    console.log('✓ Checked out main branch');
+
+    // Squash merge feature branch
+    execSync(`git merge --squash ${currentBranch}`, { cwd: workingDirectory });
+    console.log(`✓ Squashed merged ${currentBranch}`);
+
+    // Commit squash merge
+    execSync(`git commit -m "Squash merge of ${currentBranch}"`, { cwd: workingDirectory });
+    console.log('✓ Committed squash merge');
+
+    // Delete feature branch
+    execSync(`git branch -D ${currentBranch}`, { cwd: workingDirectory });
+    console.log(`✓ Deleted feature branch: ${currentBranch}`);
+
+    initialMainBranchHead = null;
+    res.json({ message: `Squash merged ${currentBranch} into main and deleted feature branch` });
+  } catch (error) {
+    console.error('Error approving:', error);
+    res.status(500).json({ message: 'Failed to approve', error: error.message });
+  }
+});
+
 
 // Check Claude availability and start server
 checkClaudeCode();
