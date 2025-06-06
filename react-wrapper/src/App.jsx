@@ -12,15 +12,20 @@ function App() {
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [message, setMessage] = useState('');
   const [claudeResponse, setClaudeResponse] = useState('');
-  const [promptTemplate, setPromptTemplate] = useState(`Please analyze the annotated screenshot at \${screenshotPath} and make changes to the code as needed.
+  const systemPrompt = `Additional context from the user: "\${userMessage}". Please make direct changes to the code files based on what you see in the screenshot. Do not make changes outside of the current working directory. Do not just suggest changes - actually implement them. The annotations are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.`;
 
-Additional context from the user: \${userMessage}
+  const promptTemplates = {
+    'Add component': `Please analyze the annotated screenshot at \${screenshotPath} and add a new component to the code as needed. ${systemPrompt}`,
+    'Remove component': `Please analyze the annotated screenshot at \${screenshotPath} and remove the specified component from the code as needed. ${systemPrompt}`,
+    'Edit component': `Please analyze the annotated screenshot at \${screenshotPath} and edit the specified component in the code as needed. ${systemPrompt}`,
+    'Adjust layout': `Please analyze the annotated screenshot at \${screenshotPath} and adjust the layout of the components in the code as needed. ${systemPrompt}`,
+  };
 
-Please make direct changes to the code files based on what you see in the screenshot. Do not make changes outside of the current working directory. Do not just suggest changes - actually implement them. The annotations are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.`);
+  const [selectedPromptType, setSelectedPromptType] = useState('Add component');
+  const [promptTemplate, setPromptTemplate] = useState(promptTemplates[selectedPromptType]);
   const eventSourceRef = useRef(null);
 
   const sendPrompt = async () => {
-    setIsLoading(true); // Start loading
     try {
       // Close any existing connection
       if (eventSourceRef.current) {
@@ -33,6 +38,8 @@ Please make direct changes to the code files based on what you see in the screen
       }
 
       const dataUrl = await domToPng(node);
+
+      setIsLoading(true); // Show the loading modal only after the screenshot has been taken
 
       // Clear previous response
       setClaudeResponse('');
@@ -132,13 +139,17 @@ Please make direct changes to the code files based on what you see in the screen
           {/* Display streamed agent response */}
           {claudeResponse || 'Agent response will go here.'}
         </div>
-        <textarea
-          placeholder="Edit prompt template here..."
-          value={promptTemplate}
-          onChange={(e) => setPromptTemplate(e.target.value)}
-          rows="10"
-          cols="30"
-        />
+        <select
+          value={selectedPromptType}
+          onChange={(e) => {
+            setSelectedPromptType(e.target.value);
+            setPromptTemplate(promptTemplates[e.target.value]);
+          }}
+        >
+          {Object.keys(promptTemplates).map((type) => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
         <textarea
           placeholder="Optional: Provide additional context for the agent..."
           value={message}
