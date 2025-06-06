@@ -163,9 +163,11 @@ function App() {
         </div>
       </header>
       <main className="main-content">
-        <Suspense fallback="Loading remote component...">
-          <RemoteComponent />
-        </Suspense>
+        <div id="remote-component-container">
+          <Suspense fallback="Loading remote component...">
+            <RemoteComponent />
+          </Suspense>
+        </div>
         <AnnotationCanvas ref={annotationCanvasRef} isVisible={isAnnotating} />
 
         {/* Progress Modal */}

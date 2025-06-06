@@ -1,6 +1,7 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { ModuleFederationPlugin } = require('@module-federation/enhanced/webpack');
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+const PostcssPrefixSelector = require('postcss-prefix-selector');
 const path = require('path');
 const deps = require('./package.json').dependencies;
 require('dotenv').config({ path: './.env' });
@@ -40,7 +41,22 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader'],
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: [
+                  PostcssPrefixSelector({
+                    prefix: '#remote-component-container',
+                  }),
+                ],
+              },
+            },
+          },
+        ],
       },
       {
         test: /\.(svg|png|jpe?g|gif)$/i,
