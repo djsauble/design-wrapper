@@ -74,11 +74,18 @@ function callClaude(userMessage, screenshotPath, promptTemplate, res) {
       .replace('${screenshotPath}', screenshotPath)
       .replace('${userMessage}', userMessage);
 
-    // Spawn Claude process in headless mode (TODO: made the path to mcp-servers.json configurable)
-    const claude = spawn('claude', ['-p', '--mcp-config', '../agent-server/mcp-servers.json', '--allowedTools', 'mcp__filesystem__read_file,mcp__filesystem__read_multiple_files,mcp__filesystem__write_file,mcp__filesystem__edit_file,mcp__filesystem__create_directory,mcp__filesystem__list_directory,mcp__filesystem__move_file,mcp__filesystem__search_files,mcp__filesystem__get_file_info,mcp__filesystem__list_allowed_directories'], {
-      cwd: workingDirectory,
-      stdio: ['pipe', 'pipe', 'pipe'] // Change stdio to pipe all streams
-    });
+    // Spawn Claude process in headless mode
+    const claude = spawn('claude',
+      [
+        '-p',
+        '--mcp-config', '{ "mcpServers": { "filesystem": { "command": "npx", "args": [ "-y", "@modelcontextprotocol/server-filesystem", ".", "' + screenshotsDir + '" ] } } }',
+        '--allowedTools', 'Read,mcp__filesystem__read_file,mcp__filesystem__read_multiple_files,mcp__filesystem__write_file,mcp__filesystem__edit_file,mcp__filesystem__create_directory,mcp__filesystem__list_directory,mcp__filesystem__move_file,mcp__filesystem__search_files,mcp__filesystem__get_file_info,mcp__filesystem__list_allowed_directories'
+      ],
+      {
+        cwd: workingDirectory,
+        stdio: ['pipe', 'pipe', 'pipe'] // Change stdio to pipe all streams
+      }
+    );
 
     // Write the prompt to Claude's stdin
     claude.stdin.write(prompt);
