@@ -11,12 +11,17 @@ A visual AI editor for React applications
    npm create vite@latest my-react-app -- --template react
    ```
 
-2. Edit `serve-react/.env` with the path to the main React component.
+2. Take a look at the main React component you want to edit.
+
+   1. Make sure it's importing React (e.g. `import React from 'react'`)
+   2. Make sure it doesn't have any absolute imports (bad: `'/vite.svg'`, good: `'../public/vite.svg'`)
+
+3. Edit `serve-react/.env` with the path to the main React component.
 
    1. `TARGET_APP_PATH` is the absolute path to the React project (e.g. `/Users/jane/my-react-app`)
    2. `TARGET_APP_ENTRY_POINT` is the relative path to the file containing your main component (e.g. `src/App.jsx`)
 
-3. Start the agent server in one terminal.
+4. Start the agent server in one terminal.
 
    ```
    cd agent-server/
@@ -24,7 +29,7 @@ A visual AI editor for React applications
    npm start
    ```
 
-4. Start the React app server in another terminal.
+5. Start the React app server in another terminal.
 
    ```
    cd serve-react/
@@ -32,7 +37,7 @@ A visual AI editor for React applications
    npm start
    ```
 
-5. Start the Design Wrapper front-end in another terminal.
+6. Start the Design Wrapper front-end in another terminal.
 
    ```
    cd visual-designer/
@@ -40,6 +45,6 @@ A visual AI editor for React applications
    npm start
    ```
 
-6. Open http://localhost:5173 in your browser.
+7. Open http://localhost:5173 in your browser.
 
-7. Start editing!
+8. Start editing!

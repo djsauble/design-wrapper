@@ -51,7 +51,6 @@ function App() {
 
       // Clear previous response
       setClaudeResponse('');
-      console.log('Claude response cleared.');
 
       // Upload screenshot first
       console.log('Uploading screenshot...');
@@ -74,15 +73,11 @@ function App() {
 
       // Listen for named 'data' events
       newEventSource.addEventListener('data', (event) => {
-        // Assuming event.data is a string. If it's JSON, parse it.
-        // e.g., const parsedData = JSON.parse(event.data);
         setClaudeResponse(prev => prev + event.data);
       });
 
       // Listen for named 'end' events
       newEventSource.addEventListener('end', (event) => {
-        // Optionally, you could append the 'end' event data too, or handle it differently.
-        // For example: setClaudeResponse(prev => prev + "\nStream finished: " + event.data);
         if (event.data) { // Check if there's data with the end event
           console.log(event.data);
         }
@@ -92,12 +87,7 @@ function App() {
       });
 
       newEventSource.onerror = (error) => {
-        // The 'error' event object for EventSource is usually a generic Event.
-        // The actual error details are often not directly in 'error.data'.
-        // It indicates a connection error.
         console.error('EventSource failed. ReadyState:', newEventSource.readyState, 'Error object:', error);
-        // Additional error information might be logged by the browser itself.
-        // Consider logging the URL or other context if errors persist.
         setClaudeResponse(prev => prev + "\nError connecting to stream.");
         newEventSource.close();
         eventSourceRef.current = null; // Clear the ref
@@ -143,10 +133,6 @@ function App() {
   return (
     <div className="app-container">
       <header className="sidebar">
-        <div className="agent-response-placeholder" style={{ whiteSpace: 'pre-wrap' }}>
-          {/* Display streamed agent response */}
-          {claudeResponse || 'Agent response will go here.'}
-        </div>
         <select
           value={selectedPromptType}
           onChange={(e) => {
@@ -169,6 +155,9 @@ function App() {
           <button onClick={sendPrompt} disabled={isLoading}>Submit</button>
           <button onClick={handleAnnotateToggle} disabled={isLoading}>{isAnnotating ? 'Clear' : 'Annotate'}</button>
         </div>
+        { claudeResponse !== '' && (
+          <div className="agent-response">{claudeResponse}</div>
+        )}
       </header>
       <main className="main-content">
         <div id="remote-component-container">

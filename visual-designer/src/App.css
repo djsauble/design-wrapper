@@ -2,7 +2,6 @@
   width: 100%;
   margin: 0;
   padding: 0;
-  text-align: center;
 }
 
 .app-container {
@@ -18,7 +17,7 @@
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Push buttons to the bottom */
+  /* justify-content: space-between; */
   flex-shrink: 0;
   gap: 1em;
 }
@@ -110,15 +109,19 @@
   cursor: not-allowed; /* Change cursor for disabled state */
 }
 
-.agent-response-placeholder {
-  flex-grow: 1; /* Take up remaining space */
+.agent-response {
   padding: 1rem;
   border: 1px solid #ccc;
   border-radius: 4px;
   background-color: #fff;
-  overflow-y: auto; /* Add scroll if content overflows */
+  overflow-y: auto;
+  white-space: 'pre-wrap';
 }
 
 #remote-component-container {
   background-color: white;
+}
+
+textarea {
+  min-height: 4em;
 }
