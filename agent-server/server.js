@@ -209,6 +209,35 @@ app.get('/api/data', async (req, res) => {
   }
 });
 
+function ensureGitBranch(workingDirectory) {
+  try {
+    // Check if the working directory is a git repository
+    execSync('git rev-parse --is-inside-work-tree', { cwd: workingDirectory, stdio: 'ignore' });
+    console.log(`✓ ${workingDirectory} is a git repository`);
+  } catch (error) {
+    // If not a git repository, initialize one
+    console.log(`✗ ${workingDirectory} is not a git repository. Initializing...`);
+    execSync('git init', { cwd: workingDirectory });
+    console.log(`✓ Initialized git repository in ${workingDirectory}`);
+  }
+
+  // Check current branch and switch to a feature branch if needed
+  try {
+    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: workingDirectory }).toString().trim();
+    if (!currentBranch.startsWith('claude-feature-')) {
+      // Create a unique feature branch name
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const featureBranch = `claude-feature-${timestamp}`;
+      execSync(`git checkout -b ${featureBranch}`, { cwd: workingDirectory });
+      console.log(`✓ Created and switched to feature branch: ${featureBranch}`);
+    } else {
+      console.log(`✓ Already on feature branch: ${currentBranch}`);
+    }
+  } catch (branchError) {
+    console.error('Error ensuring feature branch:', branchError);
+  }
+}
+
 // Undo endpoint
 app.post('/api/undo', (req, res) => {
   try {
