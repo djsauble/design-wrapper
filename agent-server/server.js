@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, spawn } = require('child_process');
 require('dotenv').config({ path: '../.env' }); // Load environment variables from .env file
+let initialMainBranchHead = null; // Declare initialMainBranchHead
 const app = express();
 
 // Check if Claude CLI is available during server startup
@@ -225,6 +226,19 @@ function ensureGitBranch(workingDirectory) {
   try {
     const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: workingDirectory }).toString().trim();
     if (!currentBranch.startsWith('claude-feature-')) {
+      // Capture the current main branch head before creating a feature branch
+      if (initialMainBranchHead === null) {
+        try {
+          initialMainBranchHead = execSync('git rev-parse main || git rev-parse master', { cwd: workingDirectory }).toString().trim();
+          console.log(`✓ Captured initial main branch head: ${initialMainBranchHead}`);
+        } catch (getMainBranchError) {
+          console.error('Error getting main branch head:', getMainBranchError);
+          // If unable to get main branch head, set to current commit as a fallback
+          initialMainBranchHead = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
+          console.log(`✗ Failed to get main branch head, using current commit as fallback: ${initialMainBranchHead}`);
+        }
+      }
+
       // Create a unique feature branch name
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const featureBranch = `claude-feature-${timestamp}`;
