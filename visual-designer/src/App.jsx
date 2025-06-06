@@ -181,7 +181,6 @@ function App() {
           <button onClick={sendPrompt} disabled={isLoading}>Submit</button>
           <button onClick={handleAnnotateToggle} disabled={isLoading}>{isAnnotating ? 'Clear' : 'Annotate'}</button>
           <button onClick={() => handleGitAction('/api/undo')} disabled={isLoading}>↺</button>
-          <button onClick={() => handleGitAction('/api/redo')} disabled={isLoading}>↻</button>
           <button onClick={() => handleGitAction('/api/approve')} disabled={isLoading}>💾</button>
           <button onClick={() => handleGitAction('/api/reset')} disabled={isLoading}>🗑️</button>
         </div>

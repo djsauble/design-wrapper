@@ -170,6 +170,24 @@ app.post('/api/upload', (req, res) => {
   }
 });
 
+async function ensureClaudeBranch(workingDirectory) {
+  try {
+    const currentBranch = execSync('git branch --show-current', { cwd: workingDirectory }).toString().trim();
+    if (!currentBranch.startsWith('claude-feature-')) {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const newBranchName = `claude-feature-${timestamp}`;
+      execSync(`git checkout -b ${newBranchName}`, { cwd: workingDirectory });
+      console.log(`✓ Switched to new branch: ${newBranchName}`);
+      return newBranchName;
+    }
+    console.log(`✓ Already on branch: ${currentBranch}`);
+    return currentBranch;
+  } catch (error) {
+    console.error('Error ensuring Claude branch:', error);
+    throw error; // Re-throw to be caught by the calling function
+  }
+}
+
 app.get('/api/data', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -188,6 +206,7 @@ app.get('/api/data', async (req, res) => {
   try {
     const filename = req.query.filename;
     const filepath = path.join(screenshotsDir, filename);
+    const workingDirectory = process.env.TARGET_APP_PATH;
 
     // Validate that the file exists
     if (!fs.existsSync(filepath)) {
@@ -196,7 +215,8 @@ app.get('/api/data', async (req, res) => {
       return;
     }
 
-    // TODO: Use a helper method to create and switch to a branch prefixed with claude-feature-* if not on one already, otherwise this is a no-op (use `git branch --show-current` to check current branch)
+    // Ensure we are on a claude-feature branch
+    await ensureClaudeBranch(workingDirectory);
 
     // Call Claude with the saved screenshot and specified working directory, passing the response object
     callClaude(req.query.message, filepath, req.query.promptTemplate, res);
@@ -210,17 +230,81 @@ app.get('/api/data', async (req, res) => {
 
 // Undo endpoint
 app.post('/api/undo', (req, res) => {
-  // TODO: Use `git branch --show-current` to confirm that we're on a branch starting with claude-feature-*, if so use `git reset --hard` to go to previous commit as long as we won't be going back further than HEAD on the main branch (use `git rev-parse <branch name>` to get the HEAD commit hash)
+  const workingDirectory = process.env.TARGET_APP_PATH;
+  if (!workingDirectory) {
+    return res.status(400).json({ message: 'Missing required TARGET_APP_PATH environment variable.' });
+  }
+
+  try {
+    const currentBranch = execSync('git branch --show-current', { cwd: workingDirectory }).toString().trim();
+    if (currentBranch.startsWith('claude-feature-')) {
+      const mainBranchHead = execSync('git rev-parse main', { cwd: workingDirectory }).toString().trim();
+      const currentCommit = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
+      const parentCommit = execSync('git rev-parse HEAD^', { cwd: workingDirectory }).toString().trim();
+
+      if (parentCommit === mainBranchHead) {
+        return res.status(400).json({ message: 'Cannot undo further than the main branch HEAD.' });
+      }
+
+      execSync('git reset --hard HEAD^', { cwd: workingDirectory });
+      console.log('✓ Undid last commit');
+      res.json({ message: 'Undo successful' });
+    } else {
+      res.status(400).json({ message: 'Not on a claude-feature branch.' });
+    }
+  } catch (error) {
+    console.error('Error undoing changes:', error);
+    res.status(500).json({ message: 'Failed to undo changes', error: error.message });
+  }
 });
 
 // Reset endpoint
 app.post('/api/reset', (req, res) => {
-  // TODO: Use `git branch --show-current` to confirm that we're on a branch starting with claude-feature-*, if so, reset any staged changes, checkout the main branch, and delete the feature branch
+  const workingDirectory = process.env.TARGET_APP_PATH;
+  if (!workingDirectory) {
+    return res.status(400).json({ message: 'Missing required TARGET_APP_PATH environment variable.' });
+  }
+
+  try {
+    const currentBranch = execSync('git branch --show-current', { cwd: workingDirectory }).toString().trim();
+    if (currentBranch.startsWith('claude-feature-')) {
+      execSync('git reset --hard', { cwd: workingDirectory }); // Reset any staged changes
+      execSync('git checkout main', { cwd: workingDirectory }); // Checkout main branch
+      execSync(`git branch -D ${currentBranch}`, { cwd: workingDirectory }); // Delete the feature branch
+      console.log(`✓ Reset and deleted branch: ${currentBranch}`);
+      res.json({ message: 'Reset successful' });
+    } else {
+      res.status(400).json({ message: 'Not on a claude-feature branch.' });
+    }
+  } catch (error) {
+    console.error('Error resetting changes:', error);
+    res.status(500).json({ message: 'Failed to reset changes', error: error.message });
+  }
 });
 
 // Approve endpoint (squash merge)
 app.post('/api/approve', (req, res) => {
-  // TODO: Use `git branch --show-current` to confirm that we're on a branch starting with claude-feature-*, if so, use `git merge` to merge the feature branch into the main branch, then checkout main and delete the feature branch
+  const workingDirectory = process.env.TARGET_APP_PATH;
+  if (!workingDirectory) {
+    return res.status(400).json({ message: 'Missing required TARGET_APP_PATH environment variable.' });
+  }
+
+  try {
+    const currentBranch = execSync('git branch --show-current', { cwd: workingDirectory }).toString().trim();
+    if (currentBranch.startsWith('claude-feature-')) {
+      execSync('git checkout main', { cwd: workingDirectory }); // Checkout main branch
+      execSync(`git merge ${currentBranch} --squash`, { cwd: workingDirectory }); // Squash merge feature branch into main
+      execSync('git commit -m "Merge claude-feature branch"', { cwd: workingDirectory }); // Commit the squash merge
+      execSync(`git branch -D ${currentBranch}`, { cwd: workingDirectory }); // Delete the feature branch
+      console.log(`✓ Approved and merged branch: ${currentBranch}`);
+      res.json({ message: 'Approval successful' });
+    } else {
+      res.status(400).json({ message: 'Not on a claude-feature branch.' });
+    }
+  } catch (error) {
+    console.error('Error approving changes:', error);
+    res.status(500).json({ message: 'Failed to approve changes', error: error.message });
+  }
 });
 
 
