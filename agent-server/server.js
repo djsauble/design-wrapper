@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const { execSync, spawn } = require('child_process');
 require('dotenv').config({ path: '../.env' }); // Load environment variables from .env file
-let initialMainBranchHead = null; // Declare initialMainBranchHead
 const app = express();
 
 // Check if Claude CLI is available during server startup
@@ -197,8 +196,7 @@ app.get('/api/data', async (req, res) => {
       return;
     }
 
-    const workingDirectory = process.env.TARGET_APP_PATH;
-    ensureGitBranch(workingDirectory);
+    // TODO: Use a helper method to create and switch to a branch prefixed with claude-feature-* if not on one already, otherwise this is a no-op (use `git branch --show-current` to check current branch)
 
     // Call Claude with the saved screenshot and specified working directory, passing the response object
     callClaude(req.query.message, filepath, req.query.promptTemplate, res);
@@ -210,154 +208,19 @@ app.get('/api/data', async (req, res) => {
   }
 });
 
-function ensureGitBranch(workingDirectory) {
-  try {
-    // Check if the working directory is a git repository
-    execSync('git rev-parse --is-inside-work-tree', { cwd: workingDirectory, stdio: 'ignore' });
-    console.log(`✓ ${workingDirectory} is a git repository`);
-  } catch (error) {
-    // If not a git repository, initialize one
-    console.log(`✗ ${workingDirectory} is not a git repository. Initializing...`);
-    execSync('git init', { cwd: workingDirectory });
-    console.log(`✓ Initialized git repository in ${workingDirectory}`);
-  }
-
-  // Check current branch and switch to a feature branch if needed
-  try {
-    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: workingDirectory }).toString().trim();
-    if (!currentBranch.startsWith('claude-feature-')) {
-      // Capture the current main branch head before creating a feature branch
-      if (initialMainBranchHead === null) {
-        try {
-          initialMainBranchHead = execSync('git rev-parse main || git rev-parse master', { cwd: workingDirectory }).toString().trim();
-          console.log(`✓ Captured initial main branch head: ${initialMainBranchHead}`);
-        } catch (getMainBranchError) {
-          console.error('Error getting main branch head:', getMainBranchError);
-          // If unable to get main branch head, set to current commit as a fallback
-          initialMainBranchHead = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
-          console.log(`✗ Failed to get main branch head, using current commit as fallback: ${initialMainBranchHead}`);
-        }
-      }
-
-      // Create a unique feature branch name
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const featureBranch = `claude-feature-${timestamp}`;
-      execSync(`git checkout -b ${featureBranch}`, { cwd: workingDirectory });
-      console.log(`✓ Created and switched to feature branch: ${featureBranch}`);
-    } else {
-      console.log(`✓ Already on feature branch: ${currentBranch}`);
-    }
-  } catch (branchError) {
-    console.error('Error ensuring feature branch:', branchError);
-  }
-}
-
 // Undo endpoint
 app.post('/api/undo', (req, res) => {
-  try {
-    const workingDirectory = process.env.TARGET_APP_PATH;
-    const currentCommit = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
-    const parentCommit = execSync('git rev-parse HEAD^', { cwd: workingDirectory }).toString().trim();
-
-    if (parentCommit !== initialMainBranchHead) {
-      execSync(`git checkout ${parentCommit}`, { cwd: workingDirectory });
-      console.log(`✓ Checked out previous commit: ${parentCommit}`);
-      res.json({ message: `Checked out previous commit: ${parentCommit}` });
-    } else {
-      console.log('Already at the initial main branch commit. Cannot undo further.');
-      res.status(400).json({ message: 'Already at the initial main branch commit. Cannot undo further.' });
-    }
-  } catch (error) {
-    console.error('Error undoing:', error);
-    res.status(500).json({ message: 'Failed to undo', error: error.message });
-  }
-});
-
-// Redo endpoint
-app.post('/api/redo', (req, res) => {
-  try {
-    const workingDirectory = process.env.TARGET_APP_PATH;
-    const currentCommit = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
-    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: workingDirectory }).toString().trim();
-    const latestCommit = execSync(`git rev-parse ${currentBranch}`, { cwd: workingDirectory }).toString().trim();
-
-    if (currentCommit !== latestCommit) {
-      const nextCommit = execSync(`git log --reverse --ancestry-path ${currentCommit}..${currentBranch} --format="%H" | head -n 1`, { cwd: workingDirectory }).toString().trim();
-      if (nextCommit) {
-        execSync(`git checkout ${nextCommit}`, { cwd: workingDirectory });
-        console.log(`✓ Checked out next commit: ${nextCommit}`);
-        res.json({ message: `Checked out next commit: ${nextCommit}` });
-      } else {
-        console.log('No next commit found on the current branch.');
-        res.status(400).json({ message: 'No next commit found on the current branch.' });
-      }
-    } else {
-      console.log('Already at the latest commit on the current branch. Cannot redo further.');
-      res.status(400).json({ message: 'Already at the latest commit on the current branch. Cannot redo further.' });
-    }
-  } catch (error) {
-    console.error('Error redoing:', error);
-    res.status(500).json({ message: 'Failed to redo', error: error.message });
-  }
+  // TODO: Use `git branch --show-current` to confirm that we're on a branch starting with claude-feature-*, if so use `git reset --hard` to go to previous commit as long as we won't be going back further than HEAD on the main branch (use `git rev-parse <branch name>` to get the HEAD commit hash)
 });
 
 // Reset endpoint
 app.post('/api/reset', (req, res) => {
-  try {
-    const workingDirectory = process.env.TARGET_APP_PATH;
-    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: workingDirectory }).toString().trim();
-
-    // Checkout main branch
-    execSync('git checkout main || git checkout master', { cwd: workingDirectory });
-    console.log('✓ Checked out main branch');
-
-    // Delete feature branch
-    if (currentBranch.startsWith('claude-feature-')) {
-      execSync(`git branch -D ${currentBranch}`, { cwd: workingDirectory });
-      console.log(`✓ Deleted feature branch: ${currentBranch}`);
-    }
-
-    initialMainBranchHead = null;
-    res.json({ message: 'Reset to main branch and deleted feature branch' });
-  } catch (error) {
-    console.error('Error resetting:', error);
-    res.status(500).json({ message: 'Failed to reset', error: error.message });
-  }
+  // TODO: Use `git branch --show-current` to confirm that we're on a branch starting with claude-feature-*, if so, reset any staged changes, checkout the main branch, and delete the feature branch
 });
 
 // Approve endpoint (squash merge)
 app.post('/api/approve', (req, res) => {
-  try {
-    const workingDirectory = process.env.TARGET_APP_PATH;
-    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: workingDirectory }).toString().trim();
-
-    if (!currentBranch.startsWith('claude-feature-')) {
-        res.status(400).json({ message: 'Not on a feature branch. Cannot approve.' });
-        return;
-    }
-
-    // Checkout main branch
-    execSync('git checkout main || git checkout master', { cwd: workingDirectory });
-    console.log('✓ Checked out main branch');
-
-    // Squash merge feature branch
-    execSync(`git merge --squash ${currentBranch}`, { cwd: workingDirectory });
-    console.log(`✓ Squashed merged ${currentBranch}`);
-
-    // Commit squash merge
-    execSync(`git commit -m "Squash merge of ${currentBranch}"`, { cwd: workingDirectory });
-    console.log('✓ Committed squash merge');
-
-    // Delete feature branch
-    execSync(`git branch -D ${currentBranch}`, { cwd: workingDirectory });
-    console.log(`✓ Deleted feature branch: ${currentBranch}`);
-
-    initialMainBranchHead = null;
-    res.json({ message: `Squash merged ${currentBranch} into main and deleted feature branch` });
-  } catch (error) {
-    console.error('Error approving:', error);
-    res.status(500).json({ message: 'Failed to approve', error: error.message });
-  }
+  // TODO: Use `git branch --show-current` to confirm that we're on a branch starting with claude-feature-*, if so, use `git merge` to merge the feature branch into the main branch, then checkout main and delete the feature branch
 });
 
 
