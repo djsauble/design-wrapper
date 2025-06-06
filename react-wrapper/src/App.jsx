@@ -16,7 +16,7 @@ function App() {
 Additional context from the user: \${userMessage}
 
 Please make direct changes to the code files based on what you see in the screenshot. Do not make changes outside of the current working directory. Do not just suggest changes - actually implement them. The annotations are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.`);
-  const eventSourceRef = useRef(null); // Ref to hold the EventSource instance
+  const eventSourceRef = useRef(null);
 
   const sendPrompt = async () => {
     try {
