@@ -104,7 +104,7 @@ function callClaude(userMessage, screenshotPath, promptTemplate, res) {
     // Handle process close
     claude.on('close', (code) => {
       if (code === 0) {
-        res.write('event: end\ndata: Claude has processed the request and made changes to the code\n\n');
+        res.write(`event: end\ndata: Claude has processed the request and made changes to the code.\n\n`);
       } else {
         res.write(`event: error\ndata: Claude exited with code ${code}\n\n`);
       }

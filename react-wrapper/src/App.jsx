@@ -12,13 +12,13 @@ function App() {
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [message, setMessage] = useState('');
   const [claudeResponse, setClaudeResponse] = useState('');
-  const systemPrompt = `Additional context from the user: "\${userMessage}". Please make direct changes to the code files based on what you see in the screenshot. Do not make changes outside of the current working directory. Do not just suggest changes - actually implement them. The annotations are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.`;
+  const systemPrompt = `Additional context from the user: "\${userMessage}". Please make direct changes to the code files based on what you see in the screenshot and the additional context from the user (if any). Do not make changes outside of the current working directory. Do not just suggest changes - actually implement them. The annotations are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red. Once you make the changes, reply with a summary of the changes in a single paragraph with no special formatting.`;
 
   const promptTemplates = {
-    'Add component': `Please analyze the annotated screenshot at \${screenshotPath} and add a new component to the code as needed. ${systemPrompt}`,
-    'Remove component': `Please analyze the annotated screenshot at \${screenshotPath} and remove the specified component from the code as needed. ${systemPrompt}`,
-    'Edit component': `Please analyze the annotated screenshot at \${screenshotPath} and edit the specified component in the code as needed. ${systemPrompt}`,
-    'Adjust layout': `Please analyze the annotated screenshot at \${screenshotPath} and adjust the layout of the components in the code as needed. ${systemPrompt}`,
+    'Add component': `Please analyze the annotated screenshot at \${screenshotPath} and add new component(s) to the code as needed. ${systemPrompt}`,
+    'Remove component': `Please analyze the annotated screenshot at \${screenshotPath} and remove the specified component(s) from the code as needed. ${systemPrompt}`,
+    'Edit component': `Please analyze the annotated screenshot at \${screenshotPath} and edit the specified component(s) in the code as needed. ${systemPrompt}`,
+    'Adjust layout': `Please analyze the annotated screenshot at \${screenshotPath} and adjust the layout of the page in the code as needed. ${systemPrompt}`,
   };
 
   const [selectedPromptType, setSelectedPromptType] = useState('Add component');
@@ -76,7 +76,7 @@ function App() {
         // Optionally, you could append the 'end' event data too, or handle it differently.
         // For example: setClaudeResponse(prev => prev + "\nStream finished: " + event.data);
         if (event.data) { // Check if there's data with the end event
-            setClaudeResponse(prev => prev + (prev ? "\n" : "") + `Final message: ${event.data}`);
+          console.log(event.data);
         }
         newEventSource.close();
         eventSourceRef.current = null; // Clear the ref
