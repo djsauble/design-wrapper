@@ -111,6 +111,7 @@ Please make direct changes to the code files based on what you see in the screen
   useEffect(() => {
     if (isAnnotating && !isLoading) {
       annotationCanvasRef.current?.clearCanvas();
+      setIsAnnotating(false);
     }
   }, [isLoading])
 
