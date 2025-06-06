@@ -4,7 +4,7 @@ const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin'
 const PostcssPrefixSelector = require('postcss-prefix-selector');
 const path = require('path');
 const deps = require('./package.json').dependencies;
-require('dotenv').config({ path: './.env' });
+require('dotenv').config({ path: '../.env' });
 
 // Load environment variables
 if (!process.env.TARGET_APP_PATH || !process.env.TARGET_APP_ENTRY_POINT) {
@@ -12,12 +12,15 @@ if (!process.env.TARGET_APP_PATH || !process.env.TARGET_APP_ENTRY_POINT) {
 }
 const targetAppPath = process.env.TARGET_APP_PATH;
 const targetAppEntryPoint = process.env.TARGET_APP_ENTRY_POINT;
-const servePort = process.env.SERVE_PORT || 3000; // Default port if not specified
+const servePort = process.env.SERVE_REACT_APP_PORT || 3000; // Default port if not specified
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 module.exports = {
   mode: isDevelopment ? 'development' : 'production',
   entry: './src/index.js',
+  output: {
+    publicPath: 'auto',
+  },
   devServer: {
     port: servePort,
     headers: {
@@ -69,7 +72,7 @@ module.exports = {
       name: 'remoteApp', // Matches the name used in the host
       filename: 'remoteEntry.js',
       exposes: {
-        // Webpack needs an absolute path or a path relative to the context (which is serve-react-app by default)
+        // Webpack needs an absolute path or a path relative to the context (which is serve-react by default)
         './Component': path.resolve(targetAppPath, targetAppEntryPoint),
       },
       shared: {
@@ -87,7 +90,7 @@ module.exports = {
     }),
     // HtmlWebpackPlugin is often not strictly needed for a remote that only exposes modules,
     // but it's useful if you want to test the remote directly or if it has its own shell.
-    // Your serve-react-app/index.html seems to be for this purpose.
+    // Your serve-react/index.html seems to be for this purpose.
     new HtmlWebpackPlugin({
       template: './index.html', // Path to your host HTML file
     }),

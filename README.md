@@ -11,7 +11,7 @@ A visual AI editor for React applications
    npm create vite@latest my-react-app -- --template react
    ```
 
-2. Edit `serve-react-app/.env` with the path to the main React component.
+2. Edit `serve-react/.env` with the path to the main React component.
 
    1. `TARGET_APP_PATH` is the absolute path to the React project (e.g. `/Users/jane/my-react-app`)
    2. `TARGET_APP_ENTRY_POINT` is the relative path to the file containing your main component (e.g. `src/App.jsx`)
@@ -27,7 +27,7 @@ A visual AI editor for React applications
 4. Start the React app server in another terminal.
 
    ```
-   cd serve-react-app/
+   cd serve-react/
    npm install
    npm start
    ```
@@ -35,7 +35,7 @@ A visual AI editor for React applications
 5. Start the Design Wrapper front-end in another terminal.
 
    ```
-   cd react-wrapper/
+   cd visual-designer/
    npm install
    npm start
    ```

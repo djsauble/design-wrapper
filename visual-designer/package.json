@@ -1,5 +1,5 @@
 {
-  "name": "react-wrapper",
+  "name": "visual-designer",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -21,6 +21,7 @@
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.0",
     "babel-loader": "^10.0.0",
     "css-loader": "^7.1.2",
+    "dotenv": "^16.5.0",
     "globals": "^16.0.0",
     "html-webpack-plugin": "^5.6.3",
     "patch-package": "^8.0.0",

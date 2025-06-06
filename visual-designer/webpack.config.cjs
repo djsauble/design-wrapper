@@ -3,11 +3,12 @@ const { ModuleFederationPlugin } = require('@module-federation/enhanced/webpack'
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const path = require('path');
 const deps = require('./package.json').dependencies;
+require('dotenv').config({ path: '../.env' });
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 const remoteAppPort = process.env.SERVE_REACT_APP_PORT || 3000; // Port of the remoteApp
-const hostAppPort = process.env.HOST_APP_PORT || 5173;   // Port for this host app
+const hostAppPort = process.env.VISUAL_DESIGNER_APP_PORT || 5173;   // Port for this host app
 
 module.exports = {
   mode: isDevelopment ? 'development' : 'production',

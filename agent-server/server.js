@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { execSync, spawn } = require('child_process');
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config({ path: '../.env' }); // Load environment variables from .env file
 const app = express();
 
 // Check if Claude CLI is available during server startup
@@ -40,17 +40,17 @@ app.use(express.json({ limit: '50mb' }));
 
 function callClaude(userMessage, screenshotPath, promptTemplate, res) {
   try {
-    const workingDirectory = process.env.AGENT_CODE_DIR; // load from .env (AGENT_CODE_DIR)
+    const workingDirectory = process.env.TARGET_APP_PATH; // load from .env (TARGET_APP_PATH)
 
     if (!workingDirectory) {
-      res.write('event: error\ndata: Missing required AGENT_CODE_DIR environment variable. Please specify an absolute path to the working directory.\n\n');
+      res.write('event: error\ndata: Missing required TARGET_APP_PATH environment variable. Please specify an absolute path to the working directory.\n\n');
       res.end();
       return;
     }
 
     // Validate that the directory path is absolute
     if (!path.isAbsolute(workingDirectory)) {
-      res.write('event: error\ndata: The AGENT_CODE_DIR environment variable must be an absolute file path.\n\n');
+      res.write('event: error\ndata: The TARGET_APP_PATH environment variable must be an absolute file path.\n\n');
       res.end();
       return;
     }
