@@ -96,7 +96,4 @@ module.exports = {
     }),
     isDevelopment && new ReactRefreshWebpackPlugin(),
   ].filter(Boolean),
-  resolve: {
-    extensions: ['.js', '.jsx'],
-  },
 };
