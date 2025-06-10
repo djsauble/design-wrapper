@@ -13,6 +13,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [message, setMessage] = useState('');
   const [claudeResponse, setClaudeResponse] = useState('');
+  const [isFeatureBranch, setIsFeatureBranch] = useState(false); // Add state for feature branch status
+  const [hasCommitsBeyondMain, setHasCommitsBeyondMain] = useState(false); // Add state for commit status
 
   const systemPrompt = `
   Context:

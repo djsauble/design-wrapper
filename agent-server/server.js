@@ -308,6 +308,34 @@ app.post('/api/approve', (req, res) => {
 });
 
 
+// Endpoint to check current branch status and commit count
+app.get('/api/branch-status', (req, res) => {
+  const workingDirectory = process.env.TARGET_APP_PATH;
+  if (!workingDirectory) {
+    return res.status(400).json({ message: 'Missing required TARGET_APP_PATH environment variable.' });
+  }
+
+  try {
+    const currentBranch = execSync('git branch --show-current', { cwd: workingDirectory }).toString().trim();
+    const isFeatureBranch = currentBranch.startsWith('claude-feature-');
+
+    let hasCommitsBeyondMain = false;
+    if (isFeatureBranch) {
+      const mainBranchHead = execSync('git rev-parse main', { cwd: workingDirectory }).toString().trim();
+      const currentCommit = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
+      // Check if the current commit is different from the main branch HEAD
+      hasCommitsBeyondMain = currentCommit !== mainBranchHead;
+    }
+
+    res.json({ isFeatureBranch, hasCommitsBeyondMain });
+  } catch (error) {
+    console.error('Error checking branch status:', error);
+    // If there's an error (e.g., not a git repository), assume not on a feature branch
+    res.status(200).json({ isFeatureBranch: false, hasCommitsBeyondMain: false });
+  }
+});
+
+
 // Check Claude availability and start server
 checkClaudeCode();
 
