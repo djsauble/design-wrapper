@@ -113,7 +113,7 @@ function callClaude(userMessage, screenshotPath, promptTemplate, res) {
     const claude = spawn('claude',
       [
         '-p',
-        '--model', 'claude-sonnet-4-20250514', // TODO: It should be possible to use claude-haiku-3-5-latest but it gives an error
+        '--model', 'claude-sonnet-4-20250514', // TODO: It should be possible to use a cheaper model like claude-3-5-haiku-20241022, but would require some prompt engineering probably
         '--mcp-config', '{ "mcpServers": { "filesystem": { "command": "npx", "args": [ "-y", "@modelcontextprotocol/server-filesystem", ".", "' + screenshotsDir + '" ] } } }',
         '--allowedTools', 'Read,mcp__filesystem__read_file,mcp__filesystem__read_multiple_files,mcp__filesystem__write_file,mcp__filesystem__edit_file,mcp__filesystem__create_directory,mcp__filesystem__list_directory,mcp__filesystem__move_file,mcp__filesystem__search_files,mcp__filesystem__get_file_info,mcp__filesystem__list_allowed_directories'
       ],
