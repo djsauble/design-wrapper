@@ -233,7 +233,7 @@ function App() {
         </div>
         { claudeResponses.length > 0 && hasCommitsBeyondMain && (
           <div className="agent-response-history">
-            {claudeResponses.map((response, index) => (
+            {[...claudeResponses].reverse().map((response, index) => (
               <div key={index} className="agent-response">
                 <div className="timestamp">{formatRelativeTime(response.timestamp)}</div>
                 <div className="response-text">{response.text}</div>
