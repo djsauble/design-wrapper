@@ -11,6 +11,7 @@ function App() {
   const annotationCanvasRef = useRef(null);
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Add loading state
+  const [isPromptLoading, setIsPromptLoading] = useState(false); // Add state to track prompt loading
   const [message, setMessage] = useState('');
   const [claudeResponses, setClaudeResponses] = useState([]); // Change to array for history
   const [hasCommitsBeyondMain, setHasCommitsBeyondMain] = useState(false); // Add state for commit status
@@ -46,6 +47,7 @@ function App() {
 
   const sendPrompt = async () => {
     try {
+      setIsPromptLoading(true); // Start prompt loading
       // Close any existing connection
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
@@ -103,7 +105,7 @@ function App() {
         newEventSource.close();
         eventSourceRef.current = null; // Clear the ref
         setIsLoading(false); // End loading on success
-
+        setIsPromptLoading(false); // End prompt loading on success
       });
 
       newEventSource.onerror = (error) => {
@@ -118,10 +120,11 @@ function App() {
         newEventSource.close();
         eventSourceRef.current = null; // Clear the ref
         setIsLoading(false); // End loading on error
+        setIsPromptLoading(false); // End prompt loading on error
       };
-
     } catch (err) {
       setIsLoading(false); // End loading on error
+      setIsPromptLoading(false); // End prompt loading on error
       console.error('Prompt failed:', err.message, err);
       setClaudeResponses(prevResponses => [...prevResponses, { text: `Error: ${err.message}`, timestamp: new Date() }]);
       if (eventSourceRef.current) {
@@ -198,9 +201,9 @@ function App() {
     };
   }, []);
 
-  // Take screenshot after isLoading becomes false and the DOM has updated
+  // Take screenshot after isPromptLoading becomes false and the DOM has updated
   useEffect(() => {
-    if (!isLoading) {
+    if (!isPromptLoading) {
       // Use setTimeout to wait for the next render tick after isLoading is false
       setTimeout(async () => {
         console.log('Taking screenshot after loading ends...');
@@ -223,7 +226,7 @@ function App() {
         });
       }, 0); // 0ms delay pushes the execution to the next event loop cycle
     }
-  }, [isLoading]);
+  }, [isPromptLoading, setClaudeResponses]);
 
   return (
     <div className="app-container">

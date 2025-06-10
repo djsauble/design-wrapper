@@ -119,6 +119,11 @@
   font-size: 0.9rem;
 }
 
+.agent-response .response-screenshot {
+  border: 1px solid #EEEEEE;
+  border-radius: 4px;
+}
+
 #remote-component-container {
   background-color: white;
 }
