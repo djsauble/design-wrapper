@@ -60,7 +60,7 @@ function App() {
 
       setIsLoading(true); // Show the loading modal only after the screenshot has been taken
 
-      // Clear previous responses and start a new one with a timestamp
+      // Add a new empty response with a timestamp
       setClaudeResponses(prevResponses => [...prevResponses, { text: '', timestamp: new Date() }]);
 
       // Upload screenshot first
@@ -104,23 +104,6 @@ function App() {
         eventSourceRef.current = null; // Clear the ref
         setIsLoading(false); // End loading on success
 
-        // Take screenshot after receiving 'end' event
-        const node = document.querySelector('.main-content');
-        let screenshotDataUrl = null;
-        try {
-          screenshotDataUrl = await domToPng(node);
-        } catch (screenshotError) {
-          console.error('Failed to take screenshot:', screenshotError);
-        }
-
-        // Finalize the last response
-        setClaudeResponses(prevResponses => {
-          const lastResponse = prevResponses[prevResponses.length - 1];
-          return [
-            ...prevResponses.slice(0, -1),
-            { ...lastResponse, timestamp: new Date(), screenshot: screenshotDataUrl }
-          ];
-        });
       });
 
       newEventSource.onerror = (error) => {
@@ -214,6 +197,33 @@ function App() {
       }
     };
   }, []);
+
+  // Take screenshot after isLoading becomes false and the DOM has updated
+  useEffect(() => {
+    if (!isLoading) {
+      // Use setTimeout to wait for the next render tick after isLoading is false
+      setTimeout(async () => {
+        console.log('Taking screenshot after loading ends...');
+        const node = document.querySelector('.main-content');
+        let screenshotDataUrl = null;
+        try {
+          screenshotDataUrl = await domToPng(node);
+        } catch (screenshotError) {
+          console.error('Failed to take screenshot:', screenshotError);
+        }
+
+        // Finalize the last response with the screenshot
+        setClaudeResponses(prevResponses => {
+          const lastResponse = prevResponses[prevResponses.length - 1];
+          if (!lastResponse) return prevResponses; // Handle case where responses might be empty
+          return [
+            ...prevResponses.slice(0, -1),
+            { ...lastResponse, timestamp: new Date(), screenshot: screenshotDataUrl }
+          ];
+        });
+      }, 0); // 0ms delay pushes the execution to the next event loop cycle
+    }
+  }, [isLoading]);
 
   return (
     <div className="app-container">
