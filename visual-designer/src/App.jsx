@@ -278,6 +278,18 @@ function App() {
  return (
    <div className="app-container">
      <header className="sidebar">
+       <div className="agent-response-history">
+          {[...claudeResponses].reverse().map((response, index) => (
+            <div key={index} className="agent-response">
+              <div className="timestamp">{formatRelativeTime(response.timestamp)}</div>
+              {response.text && <div className="response-text">{response.text}</div>}
+              {response.screenshot && <img src={response.screenshot} alt="Claude response screenshot" className="response-screenshot" />}
+              {response.commit && index !== 0 && ( // Only show revert button if it's not the latest response
+                <Button onClick={() => handleRevert(response.commit)} disabled={isLoading} styleType="secondary">Revert to this commit</Button>
+              )}
+            </div>
+          ))}
+       </div>
        <select
          value={selectedPromptType}
          onChange={(e) => {
@@ -302,20 +314,6 @@ function App() {
          <Button onClick={() => handleGitAction('/api/approve')} disabled={isLoading || !hasCommitsBeyondMain} styleType="secondary">💾</Button>
          <Button onClick={() => handleGitAction('/api/reset')} disabled={isLoading || !hasCommitsBeyondMain} styleType="secondary">🗑️</Button>
        </div>
-       { claudeResponses.length > 0 && hasCommitsBeyondMain && (
-         <div className="agent-response-history">
-           {[...claudeResponses].reverse().map((response, index) => (
-             <div key={index} className="agent-response">
-               <div className="timestamp">{formatRelativeTime(response.timestamp)}</div>
-               {response.text && <div className="response-text">{response.text}</div>}
-               {response.screenshot && <img src={response.screenshot} alt="Claude response screenshot" className="response-screenshot" />}
-               {response.commit && (
-                 <Button onClick={() => handleRevert(response.commit)} disabled={isLoading} styleType="secondary">Revert to this commit</Button>
-               )}
-             </div>
-           ))}
-         </div>
-       )}
      </header>
      <main className="main-content">
        <div id="remote-component-container">
