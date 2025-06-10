@@ -38,41 +38,59 @@ app.use((req, res, next) => {
 // Increase JSON payload limit to handle large screenshots
 app.use(express.json({ limit: '50mb' }));
 
+// Helper function to initialize git repository if needed
+async function initializeGitRepository(workingDirectory) {
+  if (!workingDirectory) {
+    throw new Error('Missing required TARGET_APP_PATH environment variable. Please specify an absolute path to the working directory.');
+  }
+
+  // Validate that the directory path is absolute
+  if (!path.isAbsolute(workingDirectory)) {
+    throw new Error('The TARGET_APP_PATH environment variable must be an absolute file path.');
+  }
+
+  // Validate that the directory exists
+  if (!fs.existsSync(workingDirectory)) {
+    throw new Error(`Directory does not exist: ${workingDirectory}`);
+  }
+
+  // Validate that it's actually a directory
+  const stats = fs.statSync(workingDirectory);
+  if (!stats.isDirectory()) {
+    throw new Error(`Path is not a directory: ${workingDirectory}`);
+  }
+
+  try {
+    // Check if it's a git repository
+    execSync('git status', { cwd: workingDirectory, stdio: 'ignore' });
+    console.log(`✓ ${workingDirectory} is already a Git repository`);
+  } catch (error) {
+    // Not a git repository, initialize it
+    console.log(`✗ ${workingDirectory} is not a Git repository. Initializing...`);
+    execSync('git init', { cwd: workingDirectory });
+    console.log(`✓ Git repository initialized in ${workingDirectory}`);
+
+    try {
+      // Check if there are any commits
+      execSync('git rev-parse HEAD', { cwd: workingDirectory, stdio: 'ignore' });
+      console.log(`✓ ${workingDirectory} already has commits`);
+    } catch (commitError) {
+      // No commits, make an initial commit
+      console.log(`✗ ${workingDirectory} has no commits. Making initial commit...`);
+      execSync('git add .', { cwd: workingDirectory });
+      execSync('git commit -m "Initial commit"', { cwd: workingDirectory });
+      console.log(`✓ Initial commit made in ${workingDirectory}`);
+    }
+  }
+}
+
 function callClaude(userMessage, screenshotPath, promptTemplate, res) {
   try {
     const workingDirectory = process.env.TARGET_APP_PATH;
     const targetAppEntryPoint = process.env.TARGET_APP_ENTRY_POINT;
 
-    if (!workingDirectory) {
-      res.write('event: error\ndata: Missing required TARGET_APP_PATH environment variable. Please specify an absolute path to the working directory.\n\n');
-      res.end();
-      return;
-    }
-
     if (!targetAppEntryPoint) {
       res.write('event: error\ndata: Missing required TARGET_APP_ENTRY_POINT environment variable. Please specify the entry point of the target application (e.g. src/App).\n\n');
-      res.end();
-      return;
-    }
-
-    // Validate that the directory path is absolute
-    if (!path.isAbsolute(workingDirectory)) {
-      res.write('event: error\ndata: The TARGET_APP_PATH environment variable must be an absolute file path.\n\n');
-      res.end();
-      return;
-    }
-
-    // Validate that the directory exists
-    if (!fs.existsSync(workingDirectory)) {
-      res.write(`event: error\ndata: Directory does not exist: ${workingDirectory}\n\n`);
-      res.end();
-      return;
-    }
-
-    // Validate that it's actually a directory
-    const stats = fs.statSync(workingDirectory);
-    if (!stats.isDirectory()) {
-      res.write(`event: error\ndata: Path is not a directory: ${workingDirectory}\n\n`);
       res.end();
       return;
     }
@@ -326,18 +344,27 @@ app.get('/api/branch-status', (req, res) => {
       hasCommitsBeyondMain = currentCommit !== mainBranchHead;
     }
 
-    res.json({ isFeatureBranch, hasCommitsBeyondMain });
+    res.json({ hasCommitsBeyondMain });
   } catch (error) {
     console.error('Error checking branch status:', error);
     // If there's an error (e.g., not a git repository), assume not on a feature branch
-    res.status(200).json({ isFeatureBranch: false, hasCommitsBeyondMain: false });
+    res.status(200).json({ hasCommitsBeyondMain: false });
   }
 });
 
 
-// Check Claude availability and start server
-checkClaudeCode();
+// Check Claude availability and initialize git repository before starting server
+async function startServer() {
+  checkClaudeCode();
+  try {
+    await initializeGitRepository(process.env.TARGET_APP_PATH);
+    app.listen(3001, () => {
+      console.log('Server is running on http://localhost:3001');
+    });
+  } catch (error) {
+    console.error('Failed to initialize server:', error.message);
+    process.exit(1);
+  }
+}
 
-app.listen(3001, () => {
-  console.log('Server is running on http://localhost:3001');
-});
+startServer();

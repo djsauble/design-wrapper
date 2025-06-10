@@ -7,11 +7,15 @@ const deps = require('./package.json').dependencies;
 require('dotenv').config({ path: '../.env' });
 
 // Load environment variables
-if (!process.env.TARGET_APP_PATH || !process.env.TARGET_APP_ENTRY_POINT) {
-  throw new Error('TARGET_APP_PATH and TARGET_APP_ENTRY_POINT must be defined in .env or environment');
+if (!process.env.TARGET_APP_PATH) {
+  throw new Error('TARGET_APP_PATH must be defined in .env or environment');
+}
+if (!process.env.TARGET_APP_ENTRY_POINT) {
+  throw new Error('TARGET_APP_ENTRY_POINT must be defined in .env or environment');
 }
 const targetAppPath = process.env.TARGET_APP_PATH;
 const targetAppEntryPoint = process.env.TARGET_APP_ENTRY_POINT;
+const targetAppAssetsRoot = path.resolve(targetAppPath, process.env.TARGET_APP_ASSETS_ROOT);
 const servePort = process.env.SERVE_REACT_APP_PORT || 3000; // Default port if not specified
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -44,6 +48,9 @@ module.exports = {
           },
           {
             loader: path.resolve('./src/fix-imports-loader.js'),
+            options: {
+              assetRoot: targetAppAssetsRoot,
+            }
           },
         ],
       },
@@ -101,4 +108,7 @@ module.exports = {
     }),
     isDevelopment && new ReactRefreshWebpackPlugin(),
   ].filter(Boolean),
+  resolve: {
+    extensions: ['.js', '.jsx'],
+  }
 };

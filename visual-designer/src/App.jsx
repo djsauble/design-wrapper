@@ -13,7 +13,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [message, setMessage] = useState('');
   const [claudeResponse, setClaudeResponse] = useState('');
-  const [isFeatureBranch, setIsFeatureBranch] = useState(false); // Add state for feature branch status
   const [hasCommitsBeyondMain, setHasCommitsBeyondMain] = useState(false); // Add state for commit status
 
   const systemPrompt = `
@@ -134,6 +133,17 @@ function App() {
     }
   };
 
+  const fetchBranchStatus = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/branch-status');
+      const data = await response.json();
+      setHasCommitsBeyondMain(data.hasCommitsBeyondMain);
+    } catch (error) {
+      console.error('Error fetching branch status:', error);
+      setHasCommitsBeyondMain(false);
+    }
+  };
+
   const handleAnnotateToggle = () => {
     if (isAnnotating) {
       annotationCanvasRef.current?.clearCanvas();
@@ -149,32 +159,14 @@ function App() {
     }
   }, [isLoading]);
 
-  // Fetch branch status on mount and when isLoading becomes false
+  // Check branch status when isLoading becomes false
   useEffect(() => {
-    const fetchBranchStatus = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/api/branch-status');
-        const data = await response.json();
-        setIsFeatureBranch(data.isFeatureBranch);
-        setHasCommitsBeyondMain(data.hasCommitsBeyondMain);
-      } catch (error) {
-        console.error('Error fetching branch status:', error);
-        // Optionally handle error, e.g., set states to false
-        setIsFeatureBranch(false);
-        setHasCommitsBeyondMain(false);
-      }
-    };
-
-    // Fetch on mount
-    fetchBranchStatus();
-
-    // Fetch when isLoading becomes false
     if (!isLoading) {
       fetchBranchStatus();
     }
-  }, [isLoading]); // Dependency array includes isLoading
+  }, [isLoading]);
 
-  // Cleanup useEffect to close EventSource when component unmounts
+  // Close EventSource when component unmounts
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -182,7 +174,7 @@ function App() {
         eventSourceRef.current = null;
       }
     };
-  }, []); // Empty dependency array ensures this runs only on mount and unmount
+  }, []);
 
   return (
     <div className="app-container">
@@ -209,8 +201,8 @@ function App() {
           <Button onClick={sendPrompt} disabled={isLoading} styleType="primary">Submit</Button>
           <Button onClick={handleAnnotateToggle} disabled={isLoading} styleType="secondary">{isAnnotating ? 'Clear' : 'Annotate'}</Button>
           <Button onClick={() => handleGitAction('/api/undo')} disabled={isLoading || !hasCommitsBeyondMain} styleType="secondary">↺</Button>
-          <Button onClick={() => handleGitAction('/api/approve')} disabled={isLoading || !isFeatureBranch} styleType="secondary">💾</Button>
-          <Button onClick={() => handleGitAction('/api/reset')} disabled={isLoading || !isFeatureBranch} styleType="secondary">🗑️</Button>
+          <Button onClick={() => handleGitAction('/api/approve')} disabled={isLoading || !hasCommitsBeyondMain} styleType="secondary">💾</Button>
+          <Button onClick={() => handleGitAction('/api/reset')} disabled={isLoading || !hasCommitsBeyondMain} styleType="secondary">🗑️</Button>
         </div>
         { claudeResponse !== '' && (
           <div className="agent-response">{claudeResponse}</div>
