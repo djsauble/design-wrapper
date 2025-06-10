@@ -144,8 +144,9 @@ function callClaude(userMessage, screenshotPath, promptTemplate, res) {
           // Commit the changes
           execSync('git add .', { cwd: workingDirectory });
           execSync('git commit -m "Claude made changes"', { cwd: workingDirectory });
+          const currentCommit = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
           console.log('✓ Changes committed to Git');
-          res.write(`event: end\ndata: Claude has processed the request and made changes to the code.\n\n`);
+          res.write(`event: end\ndata: {"message": "Claude has processed the request and made changes to the code.", "commit": "${currentCommit}"}\n\n`);
         } catch (gitError) {
           console.error('Error committing changes:', gitError);
           res.write(`event: error\ndata: Failed to commit changes: ${gitError.message}\n\n`);
@@ -258,16 +259,30 @@ app.post('/api/undo', (req, res) => {
   try {
     const currentBranch = execSync('git branch --show-current', { cwd: workingDirectory }).toString().trim();
     if (currentBranch.startsWith('claude-feature-')) {
-      const mainBranchHead = execSync('git rev-parse main', { cwd: workingDirectory }).toString().trim();
-      const currentCommit = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
+      const { commit } = req.body;
+      let targetCommit = 'HEAD^'; // Default to previous commit
 
-      if (currentCommit === mainBranchHead) {
-        return res.status(400).json({ message: 'Cannot undo further than the main branch HEAD.' });
+      if (commit) {
+        // Validate if the provided commit exists
+        try {
+          execSync(`git cat-file -t ${commit}`, { cwd: workingDirectory, stdio: 'ignore' });
+          targetCommit = commit;
+          console.log(`✓ Resetting to specific commit: ${targetCommit}`);
+        } catch (error) {
+          return res.status(400).json({ message: `Invalid commit SHA: ${commit}` });
+        }
+      } else {
+        const mainBranchHead = execSync('git rev-parse main', { cwd: workingDirectory }).toString().trim();
+        const currentCommit = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
+
+        if (currentCommit === mainBranchHead) {
+          return res.status(400).json({ message: 'Cannot undo further than the main branch HEAD.' });
+        }
+        console.log('✓ Undoing last commit');
       }
 
-      execSync('git reset --hard HEAD^', { cwd: workingDirectory });
-      console.log('✓ Undid last commit');
-      res.json({ message: 'Undo successful' });
+      execSync(`git reset --hard ${targetCommit}`, { cwd: workingDirectory });
+      res.json({ message: `Undo successful. Reset to commit ${targetCommit}` });
     } else {
       res.status(400).json({ message: 'Not on a claude-feature branch.' });
     }
