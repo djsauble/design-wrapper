@@ -32,15 +32,20 @@ module.exports = {
       {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-react'],
-            plugins: [
-              isDevelopment && require.resolve('react-refresh/babel')
-            ].filter(Boolean),
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-react'],
+              plugins: [
+                isDevelopment && require.resolve('react-refresh/babel')
+              ].filter(Boolean),
+            },
           },
-        },
+          {
+            loader: path.resolve('./src/fix-imports-loader.js'),
+          },
+        ],
       },
       {
         test: /\.css$/,

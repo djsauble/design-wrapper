@@ -11,7 +11,7 @@ A visual AI editor for React applications
    npm create vite@latest my-react-app -- --template react
    ```
 
-2. Take a look at the main React component you want to edit.
+2. The WebPack loader assumes you're pointed at a React app which uses a standard Vite configuration, otherwise you may see some errors related to the following:
 
    1. Make sure it's importing React (e.g. `import React from 'react'`)
    2. Make sure it doesn't have any absolute imports (bad: `'/vite.svg'`, good: `'../public/vite.svg'`)
