@@ -12,7 +12,7 @@ function App() {
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [message, setMessage] = useState('');
-  const [claudeResponse, setClaudeResponse] = useState('');
+  const [claudeResponses, setClaudeResponses] = useState([]); // Change to array for history
   const [hasCommitsBeyondMain, setHasCommitsBeyondMain] = useState(false); // Add state for commit status
 
   const systemPrompt = `
@@ -60,8 +60,8 @@ function App() {
 
       setIsLoading(true); // Show the loading modal only after the screenshot has been taken
 
-      // Clear previous response
-      setClaudeResponse('');
+      // Clear previous responses and start a new one with a timestamp
+      setClaudeResponses(prevResponses => [...prevResponses, { text: '', timestamp: new Date() }]);
 
       // Upload screenshot first
       console.log('Uploading screenshot...');
@@ -84,7 +84,13 @@ function App() {
 
       // Listen for named 'data' events
       newEventSource.addEventListener('data', (event) => {
-        setClaudeResponse(prev => prev + event.data);
+        setClaudeResponses(prevResponses => {
+          const lastResponse = prevResponses[prevResponses.length - 1];
+          return [
+            ...prevResponses.slice(0, -1),
+            { ...lastResponse, text: lastResponse.text + event.data }
+          ];
+        });
       });
 
       // Listen for named 'end' events
@@ -92,6 +98,14 @@ function App() {
         if (event.data) { // Check if there's data with the end event
           console.log(event.data);
         }
+        // Finalize the last response if needed (e.g., add a final timestamp or status)
+        setClaudeResponses(prevResponses => {
+          const lastResponse = prevResponses[prevResponses.length - 1];
+          return [
+            ...prevResponses.slice(0, -1),
+            { ...lastResponse, timestamp: new Date() } // Update timestamp on end
+          ];
+        });
         newEventSource.close();
         eventSourceRef.current = null; // Clear the ref
         setIsLoading(false); // End loading on success
@@ -99,7 +113,13 @@ function App() {
 
       newEventSource.onerror = (error) => {
         console.error('EventSource failed. ReadyState:', newEventSource.readyState, 'Error object:', error);
-        setClaudeResponse(prev => prev + "\nError connecting to stream.");
+        setClaudeResponses(prevResponses => {
+          const lastResponse = prevResponses[prevResponses.length - 1];
+          return [
+            ...prevResponses.slice(0, -1),
+            { ...lastResponse, text: lastResponse.text + "\nError connecting to stream.", timestamp: new Date() }
+          ];
+        });
         newEventSource.close();
         eventSourceRef.current = null; // Clear the ref
         setIsLoading(false); // End loading on error
@@ -108,7 +128,7 @@ function App() {
     } catch (err) {
       setIsLoading(false); // End loading on error
       console.error('Prompt failed:', err.message, err);
-      setClaudeResponse(`Error: ${err.message}`);
+      setClaudeResponses(prevResponses => [...prevResponses, { text: `Error: ${err.message}`, timestamp: new Date() }]);
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
@@ -166,6 +186,13 @@ function App() {
     }
   }, [isLoading]);
 
+  // Clear responses when there are no commits beyond main
+  useEffect(() => {
+    if (!hasCommitsBeyondMain) {
+      setClaudeResponses([]);
+    }
+  }, [hasCommitsBeyondMain]);
+
   // Close EventSource when component unmounts
   useEffect(() => {
     return () => {
@@ -204,8 +231,15 @@ function App() {
           <Button onClick={() => handleGitAction('/api/approve')} disabled={isLoading || !hasCommitsBeyondMain} styleType="secondary">💾</Button>
           <Button onClick={() => handleGitAction('/api/reset')} disabled={isLoading || !hasCommitsBeyondMain} styleType="secondary">🗑️</Button>
         </div>
-        { claudeResponse !== '' && hasCommitsBeyondMain && (
-          <div className="agent-response">{claudeResponse}</div>
+        { claudeResponses.length > 0 && hasCommitsBeyondMain && (
+          <div className="agent-response-history">
+            {claudeResponses.map((response, index) => (
+              <div key={index} className="agent-response">
+                <div className="timestamp">{formatRelativeTime(response.timestamp)}</div>
+                <div className="response-text">{response.text}</div>
+              </div>
+            ))}
+          </div>
         )}
       </header>
       <main className="main-content">
@@ -228,6 +262,25 @@ function App() {
       </main>
     </div>
   );
+}
+
+// Helper function to format relative time
+function formatRelativeTime(timestamp) {
+  const now = new Date();
+  const secondsAgo = Math.round((now - new Date(timestamp)) / 1000);
+
+  if (secondsAgo < 60) {
+    return `${secondsAgo}s ago`;
+  } else if (secondsAgo < 3600) {
+    const minutesAgo = Math.round(secondsAgo / 60);
+    return `${minutesAgo}m ago`;
+  } else if (secondsAgo < 86400) {
+    const hoursAgo = Math.round(secondsAgo / 3600);
+    return `${hoursAgo}h ago`;
+  } else {
+    const daysAgo = Math.round(secondsAgo / 86400);
+    return `${daysAgo}d ago`;
+  }
 }
 
 export default App;
