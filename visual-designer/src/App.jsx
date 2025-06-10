@@ -94,21 +94,33 @@ function App() {
       });
 
       // Listen for named 'end' events
-      newEventSource.addEventListener('end', (event) => {
+      newEventSource.addEventListener('end', async (event) => {
         if (event.data) { // Check if there's data with the end event
           console.log(event.data);
         }
-        // Finalize the last response if needed (e.g., add a final timestamp or status)
+
+        // Close the EventSource connection
+        newEventSource.close();
+        eventSourceRef.current = null; // Clear the ref
+        setIsLoading(false); // End loading on success
+
+        // Take screenshot after receiving 'end' event
+        const node = document.querySelector('.main-content');
+        let screenshotDataUrl = null;
+        try {
+          screenshotDataUrl = await domToPng(node);
+        } catch (screenshotError) {
+          console.error('Failed to take screenshot:', screenshotError);
+        }
+
+        // Finalize the last response
         setClaudeResponses(prevResponses => {
           const lastResponse = prevResponses[prevResponses.length - 1];
           return [
             ...prevResponses.slice(0, -1),
-            { ...lastResponse, timestamp: new Date() } // Update timestamp on end
+            { ...lastResponse, timestamp: new Date(), screenshot: screenshotDataUrl }
           ];
         });
-        newEventSource.close();
-        eventSourceRef.current = null; // Clear the ref
-        setIsLoading(false); // End loading on success
       });
 
       newEventSource.onerror = (error) => {
@@ -236,7 +248,8 @@ function App() {
             {[...claudeResponses].reverse().map((response, index) => (
               <div key={index} className="agent-response">
                 <div className="timestamp">{formatRelativeTime(response.timestamp)}</div>
-                <div className="response-text">{response.text}</div>
+                {response.text && <div className="response-text">{response.text}</div>}
+                {response.screenshot && <img src={response.screenshot} alt="Claude response screenshot" className="response-screenshot" />}
               </div>
             ))}
           </div>
