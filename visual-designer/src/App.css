@@ -50,16 +50,6 @@
   gap: 0.5rem; /* Space between buttons */
 }
 
-.sidebar-buttons button {
-  flex-grow: 1; /* Distribute space equally */
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #fff;
-  cursor: pointer;
-  font-size: 0.9rem; /* Slightly smaller font */
-  color: #333; /* Make text readable */
-}
 
 /* Styles for the progress modal overlay */
 .progress-modal-overlay {
@@ -101,13 +91,6 @@
   100% { transform: rotate(360deg); }
 }
 
-.sidebar-buttons button:hover {
-  background-color: #e0e0e0;
-}
-.sidebar-buttons button:disabled {
-  opacity: 0.5; /* Reduce opacity for disabled state */
-  cursor: not-allowed; /* Change cursor for disabled state */
-}
 
 .agent-response {
   padding: 1rem;

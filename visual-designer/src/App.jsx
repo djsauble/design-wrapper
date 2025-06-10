@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useRef, useState, useEffect } from 'react';
+import Button from './Button';
 import './App.css';
 import AnnotationCanvas from './AnnotationCanvas'; // Import the new component
 
@@ -178,11 +179,11 @@ function App() {
           cols="30"
         />
         <div className="sidebar-buttons">
-          <button onClick={sendPrompt} disabled={isLoading}>Submit</button>
-          <button onClick={handleAnnotateToggle} disabled={isLoading}>{isAnnotating ? 'Clear' : 'Annotate'}</button>
-          <button onClick={() => handleGitAction('/api/undo')} disabled={isLoading}>↺</button>
-          <button onClick={() => handleGitAction('/api/approve')} disabled={isLoading}>💾</button>
-          <button onClick={() => handleGitAction('/api/reset')} disabled={isLoading}>🗑️</button>
+          <Button onClick={sendPrompt} disabled={isLoading} styleType="primary">Submit</Button>
+          <Button onClick={handleAnnotateToggle} disabled={isLoading} styleType="secondary">{isAnnotating ? 'Clear' : 'Annotate'}</Button>
+          <Button onClick={() => handleGitAction('/api/undo')} disabled={isLoading} styleType="secondary">↺</Button>
+          <Button onClick={() => handleGitAction('/api/approve')} disabled={isLoading} styleType="secondary">💾</Button>
+          <Button onClick={() => handleGitAction('/api/reset')} disabled={isLoading} styleType="secondary">🗑️</Button>
         </div>
         { claudeResponse !== '' && (
           <div className="agent-response">{claudeResponse}</div>
