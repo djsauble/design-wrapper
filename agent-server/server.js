@@ -282,7 +282,7 @@ app.post('/api/undo', (req, res) => {
       }
 
       execSync(`git reset --hard ${targetCommit}`, { cwd: workingDirectory });
-      res.json({ message: `Undo successful. Reset to commit ${targetCommit}` });
+      res.json({ message: `Undo successful. Reset to commit ${targetCommit}`, commit: targetCommit });
     } else {
       res.status(400).json({ message: 'Not on a claude-feature branch.' });
     }
