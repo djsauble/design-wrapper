@@ -325,14 +325,7 @@ function App() {
        <AnnotationCanvas ref={annotationCanvasRef} isVisible={isAnnotating} />
 
        {/* Progress Modal */}
-       {isLoading && (
-         <div className="progress-modal-overlay">
-           <div className="progress-modal-content">
-             <div className="spinner"></div> {/* Simple spinner placeholder */}
-             <p>Processing...</p>
-           </div>
-         </div>
-       )}
+       {isLoading && <div className="progress-modal-overlay"></div>}
      </main>
    </div>
  );
