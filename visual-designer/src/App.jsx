@@ -282,6 +282,7 @@ function App() {
           {[...claudeResponses].reverse().map((response, index) => (
             <div key={index} className="agent-response">
               <div className="timestamp">{formatRelativeTime(response.timestamp)}</div>
+              {!response.text && <div className="spinner"></div>}
               {response.text && <div className="response-text">{response.text}</div>}
               {response.screenshot && <img src={response.screenshot} alt="Claude response screenshot" className="response-screenshot" />}
               {response.commit && index !== 0 && ( // Only show revert button if it's not the latest response
