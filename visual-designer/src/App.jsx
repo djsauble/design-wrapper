@@ -204,7 +204,7 @@ function App() {
           <Button onClick={() => handleGitAction('/api/approve')} disabled={isLoading || !hasCommitsBeyondMain} styleType="secondary">💾</Button>
           <Button onClick={() => handleGitAction('/api/reset')} disabled={isLoading || !hasCommitsBeyondMain} styleType="secondary">🗑️</Button>
         </div>
-        { claudeResponse !== '' && (
+        { claudeResponse !== '' && hasCommitsBeyondMain && (
           <div className="agent-response">{claudeResponse}</div>
         )}
       </header>
