@@ -147,7 +147,32 @@ function App() {
       annotationCanvasRef.current?.clearCanvas();
       setIsAnnotating(false);
     }
-  }, [isLoading])
+  }, [isLoading]);
+
+  // Fetch branch status on mount and when isLoading becomes false
+  useEffect(() => {
+    const fetchBranchStatus = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/branch-status');
+        const data = await response.json();
+        setIsFeatureBranch(data.isFeatureBranch);
+        setHasCommitsBeyondMain(data.hasCommitsBeyondMain);
+      } catch (error) {
+        console.error('Error fetching branch status:', error);
+        // Optionally handle error, e.g., set states to false
+        setIsFeatureBranch(false);
+        setHasCommitsBeyondMain(false);
+      }
+    };
+
+    // Fetch on mount
+    fetchBranchStatus();
+
+    // Fetch when isLoading becomes false
+    if (!isLoading) {
+      fetchBranchStatus();
+    }
+  }, [isLoading]); // Dependency array includes isLoading
 
   // Cleanup useEffect to close EventSource when component unmounts
   useEffect(() => {
@@ -183,9 +208,9 @@ function App() {
         <div className="sidebar-buttons">
           <Button onClick={sendPrompt} disabled={isLoading} styleType="primary">Submit</Button>
           <Button onClick={handleAnnotateToggle} disabled={isLoading} styleType="secondary">{isAnnotating ? 'Clear' : 'Annotate'}</Button>
-          <Button onClick={() => handleGitAction('/api/undo')} disabled={isLoading} styleType="secondary">↺</Button>
-          <Button onClick={() => handleGitAction('/api/approve')} disabled={isLoading} styleType="secondary">💾</Button>
-          <Button onClick={() => handleGitAction('/api/reset')} disabled={isLoading} styleType="secondary">🗑️</Button>
+          <Button onClick={() => handleGitAction('/api/undo')} disabled={isLoading || !hasCommitsBeyondMain} styleType="secondary">↺</Button>
+          <Button onClick={() => handleGitAction('/api/approve')} disabled={isLoading || !isFeatureBranch} styleType="secondary">💾</Button>
+          <Button onClick={() => handleGitAction('/api/reset')} disabled={isLoading || !isFeatureBranch} styleType="secondary">🗑️</Button>
         </div>
         { claudeResponse !== '' && (
           <div className="agent-response">{claudeResponse}</div>

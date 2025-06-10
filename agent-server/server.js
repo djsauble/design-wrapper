@@ -239,7 +239,6 @@ app.post('/api/undo', (req, res) => {
     const currentBranch = execSync('git branch --show-current', { cwd: workingDirectory }).toString().trim();
     if (currentBranch.startsWith('claude-feature-')) {
       const mainBranchHead = execSync('git rev-parse main', { cwd: workingDirectory }).toString().trim();
-      const currentCommit = execSync('git rev-parse HEAD', { cwd: workingDirectory }).toString().trim();
       const parentCommit = execSync('git rev-parse HEAD^', { cwd: workingDirectory }).toString().trim();
 
       if (parentCommit === mainBranchHead) {
