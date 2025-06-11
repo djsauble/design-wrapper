@@ -11,7 +11,7 @@ function App() {
   const annotationCanvasRef = useRef(null);
   const [isAnnotating, setIsAnnotating] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Add loading state
-  const [isPromptLoading, setIsPromptLoading] = useState(false); // Add state to track prompt loading
+  const [promptSuccess, setPromptSuccess] = useState(false); // Add state to track prompt loading
   const [message, setMessage] = useState('');
   const [claudeResponses, setClaudeResponses] = useState([]); // Change to array for history
   const [hasCommitsBeyondMain, setHasCommitsBeyondMain] = useState(false); // Add state for commit status
@@ -20,7 +20,7 @@ function App() {
   Context:
 
   The React component being edited is located at: \${targetComponentPath}
-  The annotated screenshot of the Reaact component is located at: \${screenshotPath}
+  The annotated screenshot of the React component is located at: \${screenshotPath}
   Additional context from the user: "\${userMessage}"
 
   Main rules:
@@ -47,7 +47,6 @@ function App() {
 
   const sendPrompt = async () => {
     try {
-      setIsPromptLoading(true); // Start prompt loading
       // Close any existing connection
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
@@ -109,6 +108,7 @@ function App() {
                { ...lastResponse, commit: endData.commit } // Add commit SHA to the last response
              ];
            });
+           setPromptSuccess(true); // Start prompt loading
          } catch (parseError) {
            console.error('Failed to parse end event data:', parseError);
          }
@@ -118,7 +118,6 @@ function App() {
        newEventSource.close();
        eventSourceRef.current = null; // Clear the ref
        setIsLoading(false); // End loading on success
-       setIsPromptLoading(false); // End prompt loading on success
      });
 
      newEventSource.onerror = (error) => {
@@ -133,11 +132,9 @@ function App() {
        newEventSource.close();
        eventSourceRef.current = null; // Clear the ref
        setIsLoading(false); // End loading on error
-       setIsPromptLoading(false); // End prompt loading on error
      };
    } catch (err) {
      setIsLoading(false); // End loading on error
-     setIsPromptLoading(false); // End prompt loading on error
      console.error('Prompt failed:', err.message, err);
      setClaudeResponses(prevResponses => [...prevResponses, { text: `Error: ${err.message}`, timestamp: new Date() }]);
      if (eventSourceRef.current) {
@@ -248,9 +245,9 @@ function App() {
    };
  }, []);
 
- // Take screenshot after isPromptLoading becomes false and the DOM has updated
+ // Take screenshot on promptSuccess and after the DOM has updated
  useEffect(() => {
-   if (!isPromptLoading) {
+   if (promptSuccess) {
      // Use setTimeout to wait for the next render tick after isLoading is false
      setTimeout(async () => {
        console.log('Taking screenshot after loading ends...');
@@ -271,9 +268,10 @@ function App() {
            { ...lastResponse, timestamp: new Date(), screenshot: screenshotDataUrl }
          ];
        });
+       setPromptSuccess(false);
      }, 0); // 0ms delay pushes the execution to the next event loop cycle
    }
- }, [isPromptLoading, setClaudeResponses]);
+ }, [promptSuccess, setClaudeResponses]);
 
  return (
    <div className="app-container">
@@ -284,7 +282,7 @@ function App() {
               <div className="timestamp">{formatRelativeTime(response.timestamp)}</div>
               {!response.text && <div className="spinner"></div>}
               {response.text && <div className="response-text">{response.text}</div>}
-              {response.screenshot && <img src={response.screenshot} alt="Claude response screenshot" className="response-screenshot" />}
+              {response.screenshot && index !== 0 && <img src={response.screenshot} alt="Claude response screenshot" className="response-screenshot" />}
               {response.commit && index !== 0 && ( // Only show revert button if it's not the latest response
                 <Button onClick={() => handleRevert(response.commit)} disabled={isLoading} styleType="secondary">Revert to this commit</Button>
               )}
