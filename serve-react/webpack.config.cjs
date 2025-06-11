@@ -12,30 +12,30 @@ const fs = require('fs');
 if (!process.env.TARGET_APP_PATH) {
   throw new Error('TARGET_APP_PATH must be defined in .env or environment');
 }
-if (!process.env.TARGET_APP_ENTRY_POINT) {
-  throw new Error('TARGET_APP_ENTRY_POINT must be defined in .env or environment');
+if (!process.env.TARGET_APP_COMPONENTS_DIR) {
+  throw new Error('TARGET_APP_COMPONENTS_DIR must be defined in .env or environment');
+}
+if (!process.env.TARGET_APP_ROOT_COMPONENT) {
+  throw new Error('TARGET_APP_ROOT_COMPONENT must be defined in .env or environment');
 }
 const targetAppPath = process.env.TARGET_APP_PATH;
-const targetAppEntryPoint = process.env.TARGET_APP_ENTRY_POINT;
+const targetAppComponentsDir = process.env.TARGET_APP_COMPONENTS_DIR;
+const targetAppEntryPoint = process.env.TARGET_APP_ROOT_COMPONENT;
 const targetAppAssetsRoot = path.resolve(targetAppPath, process.env.TARGET_APP_ASSETS_ROOT);
 const servePort = process.env.SERVE_REACT_APP_PORT || 3000; // Default port if not specified
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 // Dynamically generate the exposes object by scanning the target directory
-const exposableComponents = glob.sync(`${targetAppPath}/**/*.{js,jsx}`).reduce((acc, file) => {
-  // Create a relative path from targetAppPath, then use it for the expose key
-  const relativePath = path.relative(targetAppPath, file);
+const scannedDir = path.resolve(targetAppPath, targetAppComponentsDir);
+const exposableComponents = glob.sync(`${scannedDir}/**/*.{js,jsx}`).reduce((acc, file) => {
+  // Create a relative path from scannedDir, then use it for the expose key
+  const relativePath = path.relative(scannedDir, file);
   // Get component name from filename without extension
   const componentName = path.basename(relativePath, path.extname(relativePath));
   const exposeKey = `./${componentName}`;
   acc[exposeKey] = path.resolve(__dirname, file);
   return acc;
 }, {});
-
-// Ensure the main entry point is included if not already found by glob
-if (!exposableComponents['./Component']) {
-    exposableComponents['./Component'] = path.resolve(targetAppPath, targetAppEntryPoint);
-}
 
 const outputDir = path.resolve(__dirname, 'dist');
 if (!fs.existsSync(outputDir)){

@@ -19,7 +19,7 @@ A visual AI editor for React applications
 3. Edit `serve-react/.env` with the path to the main React component.
 
    1. `TARGET_APP_PATH` is the absolute path to the React project (e.g. `/Users/jane/my-react-app`)
-   2. `TARGET_APP_ENTRY_POINT` is the relative path to the file containing your main component (e.g. `src/App.jsx`)
+   2. `TARGET_APP_COMPONENTS_DIR`/`TARGET_APP_ROOT_COMPONENT` is the relative path to the file containing your main component (e.g. `src/App.jsx`)
 
 4. Start the agent server in one terminal.
 

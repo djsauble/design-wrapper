@@ -2,10 +2,27 @@ import React, { lazy, Suspense, useRef, useState, useEffect } from 'react';
 import Button from './Button';
 import './App.css';
 import AnnotationCanvas from './AnnotationCanvas'; // Import the new component
-
-const RemoteComponent = lazy(() => import('remoteApp/Component'));
+import { loadRemote } from '@module-federation/enhanced/runtime';
 
 import { domToPng } from 'modern-screenshot';
+
+const remoteAppPort = 3000;
+
+// A simple cache for lazy loaded components
+const componentCache = new Map();
+
+const DynamicRemoteComponent = ({ componentName }) => {
+  if (!componentName) return null;
+
+  const componentKey = `remoteApp/${componentName.substring(2)}`;
+  if (!componentCache.has(componentKey)) {
+    componentCache.set(componentKey, lazy(() => loadRemote(componentKey)));
+  }
+
+  const Component = componentCache.get(componentKey);
+  return <Component />;
+};
+
 
 function App() {
   const annotationCanvasRef = useRef(null);
@@ -15,6 +32,25 @@ function App() {
   const [message, setMessage] = useState('');
   const [claudeResponses, setClaudeResponses] = useState([]); // Change to array for history
   const [hasCommitsBeyondMain, setHasCommitsBeyondMain] = useState(false); // Add state for commit status
+
+  const [availableRemoteComponents, setAvailableRemoteComponents] = useState([]);
+  const [selectedRemoteComponent, setSelectedRemoteComponent] = useState('');
+
+  useEffect(() => {
+    async function fetchExposedComponents() {
+      try {
+        const response = await fetch(`http://localhost:${remoteAppPort}/exposes.json`);
+        const components = await response.json();
+        setAvailableRemoteComponents(components);
+        // Select the first component
+        const defaultComponent = components[0] || '';
+        setSelectedRemoteComponent(defaultComponent);
+      } catch (error) {
+        console.error('Failed to fetch remote components manifest:', error);
+      }
+    }
+    fetchExposedComponents();
+  }, [isLoading]); // Refetch when loading state changes to get latest components after a server action
 
   const systemPrompt = `
   Context:
@@ -289,6 +325,22 @@ function App() {
             </div>
           ))}
        </div>
+       <div className="sidebar-item">
+         <label htmlFor="component-selector">Select Component:</label>
+         <select
+           id="component-selector"
+           value={selectedRemoteComponent}
+           onChange={(e) => setSelectedRemoteComponent(e.target.value)}
+           disabled={availableRemoteComponents.length === 0}
+         >
+           <option value="" disabled>Loading Components...</option>
+           {availableRemoteComponents.map((name) => (
+             <option key={name} value={name}>
+               {name.substring(2)}
+             </option>
+           ))}
+         </select>
+       </div>
        <select
          value={selectedPromptType}
          onChange={(e) => {
@@ -317,7 +369,7 @@ function App() {
      <main className="main-content">
        <div id="remote-component-container">
          <Suspense fallback="Loading remote component...">
-           <RemoteComponent />
+           <DynamicRemoteComponent componentName={selectedRemoteComponent} />
          </Suspense>
        </div>
        <AnnotationCanvas ref={annotationCanvasRef} isVisible={isAnnotating} />
