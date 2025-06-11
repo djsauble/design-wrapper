@@ -28,14 +28,14 @@ function App() {
         const components = await response.json();
         setAvailableRemoteComponents(components);
         // Select the first component
-        const defaultComponent = components[1] || '';
+        const defaultComponent = components[0] || '';
         setSelectedRemoteComponent(defaultComponent);
       } catch (error) {
         console.error('Failed to fetch remote components manifest:', error);
       }
     }
     fetchExposedComponents();
-  }, [isLoading]); // Refetch when loading state changes to get latest components after a server action
+  }, []);
 
   const systemPrompt = `
   Context:

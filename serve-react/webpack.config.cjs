@@ -28,12 +28,16 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 // Dynamically generate the exposes object by scanning the target directory
 const scannedDir = path.resolve(targetAppPath, targetAppComponentsDir);
 const exposableComponents = glob.sync(`${scannedDir}/**/*.{js,jsx}`).reduce((acc, file) => {
-  // Create a relative path from scannedDir, then use it for the expose key
-  const relativePath = path.relative(scannedDir, file);
-  // Get component name from filename without extension
-  const componentName = path.basename(relativePath, path.extname(relativePath));
-  const exposeKey = `./${componentName}`;
-  acc[exposeKey] = path.resolve(__dirname, file);
+  // Read the file content to check for a default export
+  const fileContent = fs.readFileSync(file, 'utf8');
+  if (fileContent.includes('export default')) {
+    // Create a relative path from scannedDir, then use it for the expose key
+    const relativePath = path.relative(scannedDir, file);
+    // Get component name from filename without extension
+    const componentName = path.basename(relativePath, path.extname(relativePath));
+    const exposeKey = `./${componentName}`;
+    acc[exposeKey] = path.resolve(__dirname, file);
+  }
   return acc;
 }, {});
 

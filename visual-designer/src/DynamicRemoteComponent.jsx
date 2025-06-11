@@ -3,15 +3,19 @@ import { loadRemote } from '@module-federation/enhanced/runtime';
 import ErrorBoundary from './ErrorBoundary'; // Adjust the import path as needed
 import BadComponent from './BadComponent';
 
+const componentCache = new Map();
+
 const DynamicRemoteComponent = ({ componentName }) => {
   if (!componentName) {
     return null;
   }
 
   const componentKey = `remoteApp/${componentName.substring(2)}`;
-  
-  // The lazy function will now attempt to load the remote component
-  const Component = lazy(() => loadRemote(componentKey));
+  if (!componentCache.has(componentKey)) {
+    componentCache.set(componentKey, lazy(() => loadRemote(componentKey)));
+  }
+
+  const Component = componentCache.get(componentKey);
 
   return (
     // ErrorBoundary catches the error if loadRemote fails
