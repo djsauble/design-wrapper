@@ -5,6 +5,8 @@ const PostcssPrefixSelector = require('postcss-prefix-selector');
 const path = require('path');
 const deps = require('./package.json').dependencies;
 require('dotenv').config({ path: '../.env' });
+const glob = require('glob');
+const fs = require('fs');
 
 // Load environment variables
 if (!process.env.TARGET_APP_PATH) {
@@ -19,13 +21,42 @@ const targetAppAssetsRoot = path.resolve(targetAppPath, process.env.TARGET_APP_A
 const servePort = process.env.SERVE_REACT_APP_PORT || 3000; // Default port if not specified
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
+// Dynamically generate the exposes object by scanning the target directory
+const exposableComponents = glob.sync(`${targetAppPath}/**/*.{js,jsx}`).reduce((acc, file) => {
+  // Create a relative path from targetAppPath, then use it for the expose key
+  const relativePath = path.relative(targetAppPath, file);
+  // Get component name from filename without extension
+  const componentName = path.basename(relativePath, path.extname(relativePath));
+  const exposeKey = `./${componentName}`;
+  acc[exposeKey] = path.resolve(__dirname, file);
+  return acc;
+}, {});
+
+// Ensure the main entry point is included if not already found by glob
+if (!exposableComponents['./Component']) {
+    exposableComponents['./Component'] = path.resolve(targetAppPath, targetAppEntryPoint);
+}
+
+const outputDir = path.resolve(__dirname, 'dist');
+if (!fs.existsSync(outputDir)){
+    fs.mkdirSync(outputDir, { recursive: true });
+}
+fs.writeFileSync(
+  path.join(outputDir, 'exposes.json'),
+  JSON.stringify(Object.keys(exposableComponents))
+);
+
 module.exports = {
   mode: isDevelopment ? 'development' : 'production',
   entry: './src/index.js',
   output: {
+    path: outputDir,
     publicPath: 'auto',
   },
   devServer: {
+    static: {
+      directory: outputDir,
+    },
     port: servePort,
     headers: {
       'Access-Control-Allow-Origin': '*',
@@ -83,10 +114,7 @@ module.exports = {
     new ModuleFederationPlugin({
       name: 'remoteApp', // Matches the name used in the host
       filename: 'remoteEntry.js',
-      exposes: {
-        // Webpack needs an absolute path or a path relative to the context (which is serve-react by default)
-        './Component': path.resolve(targetAppPath, targetAppEntryPoint),
-      },
+      exposes: exposableComponents,
       shared: {
         react: {
           singleton: true,
