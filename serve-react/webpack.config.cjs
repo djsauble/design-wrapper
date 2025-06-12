@@ -47,7 +47,7 @@ if (!fs.existsSync(outputDir)){
 }
 fs.writeFileSync(
   path.join(outputDir, 'exposes.json'),
-  JSON.stringify(Object.keys(exposableComponents))
+  JSON.stringify(exposableComponents)
 );
 
 module.exports = {

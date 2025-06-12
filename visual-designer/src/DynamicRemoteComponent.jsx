@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { loadRemote } from '@module-federation/enhanced/runtime';
-import ErrorBoundary from './ErrorBoundary'; // Adjust the import path as needed
+import ErrorBoundary from './ErrorBoundary';
 import BadComponent from './BadComponent';
 
 const componentCache = new Map();
@@ -20,7 +20,7 @@ const DynamicRemoteComponent = ({ componentName }) => {
   return (
     // ErrorBoundary catches the error if loadRemote fails
     <Suspense fallback={<div>Loading...</div>}>
-      <ErrorBoundary fallback={BadComponent}>
+      <ErrorBoundary fallback={<BadComponent />}>
         <Component />
       </ErrorBoundary>
     </Suspense>

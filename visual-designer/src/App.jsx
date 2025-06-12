@@ -18,7 +18,7 @@ function App() {
   const [claudeResponses, setClaudeResponses] = useState([]); // Change to array for history
   const [hasCommitsBeyondMain, setHasCommitsBeyondMain] = useState(false); // Add state for commit status
 
-  const [availableRemoteComponents, setAvailableRemoteComponents] = useState([]);
+  const [availableRemoteComponents, setAvailableRemoteComponents] = useState({});
   const [selectedRemoteComponent, setSelectedRemoteComponent] = useState('');
 
   useEffect(() => {
@@ -28,7 +28,8 @@ function App() {
         const components = await response.json();
         setAvailableRemoteComponents(components);
         // Select the first component
-        const defaultComponent = components[0] || '';
+        const componentNames = Object.keys(components);
+        const defaultComponent = componentNames[0] || '';
         setSelectedRemoteComponent(defaultComponent);
       } catch (error) {
         console.error('Failed to fetch remote components manifest:', error);
@@ -37,29 +38,35 @@ function App() {
     fetchExposedComponents();
   }, []);
 
-  const systemPrompt = `
-  Context:
+  const pathContext = `
+* The React component being edited is located at: \${targetComponentPath}`;
 
-  The React component being edited is located at: \${targetComponentPath}
-  The annotated screenshot of the React component is located at: \${screenshotPath}
-  Additional context from the user: "\${userMessage}"
+  const screenshotContext = `
+* The annotated screenshot of the React component is located at: \${screenshotPath}
+* Please make direct changes to the code files based on what you see in the screenshot and the additional context from the user (if any).`;
 
-  Main rules:
+  const messageContext = `
+* Additional context from the user: "\${userMessage}"`;
 
-  * Please make direct changes to the code files based on what you see in the screenshot and the additional context from the user (if any).
-  * Do not make changes outside of the current working directory.
-  * Do not just suggest changes - actually implement them.
-  * The annotations in the screenshot are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.
-  * Once you make the changes, reply with a summary of the changes in a single paragraph with no special formatting.
-  
-  Specific instructions:
-  `;
+  const rulesContext = `
+* Do not make changes outside of the current working directory.
+* Do not just suggest changes - actually implement them.
+* The annotations in the screenshot are low-fidelity and intended to communicate changes, so don't reproduce them exactly. For example, there may be arrows or text that show what changes are desired. The color of the annotations are always red, but that doesn't mean you should make the changes red.
+* Once you make the changes, reply with a summary of the changes in a single paragraph with no special formatting.`;
 
   const promptTemplates = {
-    'Add component': `${systemPrompt}\nAdd new component(s) to the code as needed. Optimize for modularity and reusability.`,
-    'Remove component': `${systemPrompt}\nRemove the specified component(s) from the code as needed.`,
-    'Edit component': `${systemPrompt}\nEdit the specified component(s) in the code as needed. Prefer changes to the existing code or direct imports rather than creating new files or editing files unrelated to or upstream of the existing component(s).`,
-    'Adjust layout': `${systemPrompt}\nAdjust the layout of the page and components in the code as needed.`,
+    'Add component': `
+${rulesContext}${messageContext}
+Add new component(s) to the code, one component per file, with a default export. Optimize for modularity and reusability.
+    `,
+
+    'Remove component': `
+${rulesContext}${messageContext}${screenshotContext}${pathContext}
+Remove the specified component(s) from the code (imports, instances, files) as needed.`,
+
+    'Edit component': `
+${rulesContext}${messageContext}${screenshotContext}${pathContext}
+Edit the specified component(s) in the code as needed. Prefer changes to the existing code or direct imports rather than creating new files or editing files unrelated to or upstream of the existing component(s).`,
   };
 
   const [selectedPromptType, setSelectedPromptType] = useState('Add component');
@@ -99,8 +106,9 @@ function App() {
 
       const { filename } = await uploadResponse.json();
 
-      // Establish SSE connection with filename
-      const sseUrl = `http://localhost:3001/api/data?filename=${encodeURIComponent(filename)}&message=${encodeURIComponent(message)}&promptTemplate=${encodeURIComponent(promptTemplate)}`;
+      // Establish SSE connection with filename and component path
+      const componentPath = availableRemoteComponents[selectedRemoteComponent];
+      const sseUrl = `http://localhost:3001/api/data?filename=${encodeURIComponent(filename)}&message=${encodeURIComponent(message)}&promptTemplate=${encodeURIComponent(promptTemplate)}&componentPath=${encodeURIComponent(componentPath)}`;
       const newEventSource = new EventSource(sseUrl);
       eventSourceRef.current = newEventSource; // Store the new EventSource instance
 
@@ -314,11 +322,11 @@ function App() {
          id="component-selector"
          value={selectedRemoteComponent}
          onChange={(e) => setSelectedRemoteComponent(e.target.value)}
-         disabled={availableRemoteComponents.length === 0}
+         disabled={Object.keys(availableRemoteComponents).length === 0}
        >
-         {availableRemoteComponents.map((name) => (
-           <option key={name} value={name}>
-             {name.substring(2)}
+         {Object.entries(availableRemoteComponents).map((pair) => (
+           <option key={pair[1]} value={pair[0]}>
+             {pair[0]}
            </option>
          ))}
        </select>

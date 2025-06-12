@@ -84,20 +84,18 @@ async function initializeGitRepository(workingDirectory) {
   }
 }
 
-function callClaude(userMessage, screenshotPath, promptTemplate, res) {
+function callClaude(userMessage, screenshotPath, promptTemplate, targetComponentPath, res) {
   try {
     const workingDirectory = process.env.TARGET_APP_PATH;
-    const targetAppComponentsDir = process.env.TARGET_APP_COMPONENTS_DIR;
-    const targetAppEntryPoint = process.env.TARGET_APP_ROOT_COMPONENT;
 
-    if (!targetAppEntryPoint) {
-      res.write('event: error\ndata: Missing required TARGET_APP_ROOT_COMPONENT environment variable. Please specify the entry point of the target application (e.g. src/App).\n\n');
+    if (!targetComponentPath) {
+      res.write('event: error\ndata: Missing required targetComponentPath parameter.\n\n');
       res.end();
       return;
     }
 
     // Validate that the target component path is valid
-    const targetComponentPath = path.resolve(workingDirectory, targetAppComponentsDir, targetAppEntryPoint);
+    console.log(targetComponentPath);
     if (!fs.existsSync(targetComponentPath)) {
       res.write(`event: error\ndata: Target component path does not exist: ${targetComponentPath}\n\n`);
       res.end();
@@ -109,8 +107,10 @@ function callClaude(userMessage, screenshotPath, promptTemplate, res) {
       .replace('${screenshotPath}', screenshotPath)
       .replace('${userMessage}', userMessage);
 
+
+    console.log(prompt.toString());
+
     // Spawn Claude process in headless mode
-    console.log(screenshotsDir);
     const claude = spawn('claude',
       [
         '-p',
@@ -240,8 +240,10 @@ app.get('/api/data', async (req, res) => {
     // Ensure we are on a claude-feature branch
     await ensureClaudeBranch(workingDirectory);
 
-    // Call Claude with the saved screenshot and specified working directory, passing the response object
-    callClaude(req.query.message, filepath, req.query.promptTemplate, res);
+    const componentPath = req.query.componentPath;
+
+    // Call Claude with the saved screenshot, specified working directory, component path, and passing the response object
+    callClaude(req.query.message, filepath, req.query.promptTemplate, componentPath, res);
 
   } catch (error) {
     console.error('Error processing request:', error);
